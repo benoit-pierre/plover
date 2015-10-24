@@ -3,6 +3,7 @@
 
 """Platform dependent configuration."""
 
+import pkg_resources
 import appdirs
 import os
 from os.path import realpath, join, dirname, abspath, isfile, pardir
@@ -20,6 +21,9 @@ elif (sys.platform.startswith('darwin') and '.app' in realpath(__file__)):
 else:
     ASSETS_DIR = join(dirname(dirname(realpath(__file__))), 'assets')
     PROGRAM_DIR = os.getcwd()
+
+if pkg_resources.resource_isdir('plover', 'assets'):
+    ASSETS_DIR = pkg_resources.resource_filename('plover', 'assets')
 
 # If the program's directory has a plover.cfg file then run in "portable mode",
 # i.e. store all data in the same directory. This allows keeping all Plover

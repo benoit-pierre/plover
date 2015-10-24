@@ -25,7 +25,7 @@ setuptools.setup(
     author_email = 'joshua.harlan.lifton@gmail.com',
     maintainer = 'Joshua Harlan Lifton',
     maintainer_email = 'joshua.harlan.lifton@gmail.com',
-    zip_safe = False,
+    zip_safe = True,
     install_requires = [
         'setuptools',
         'pyserial>=2.7',
