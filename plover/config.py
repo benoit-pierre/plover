@@ -111,6 +111,7 @@ DEFAULT_KEYBOARD_CONFIG_FRAME_Y = -1
 # Dictionary constants.
 JSON_EXTENSION = '.json'
 RTF_EXTENSION = '.rtf'
+PYTHON_EXTENSION = '.py'
 
 # Logging constants.
 LOG_EXTENSION = '.log'

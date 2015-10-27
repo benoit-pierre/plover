@@ -11,14 +11,14 @@ from os.path import splitext
 import shutil
 import threading
 
-import plover.dictionary.json_dict as json_dict
-import plover.dictionary.rtfcre_dict as rtfcre_dict
-from plover.config import JSON_EXTENSION, RTF_EXTENSION, CONFIG_DIR
+from plover.dictionary import json_dict, rtfcre_dict, python_dict
+from plover.config import JSON_EXTENSION, RTF_EXTENSION, PYTHON_EXTENSION, CONFIG_DIR
 from plover.exception import DictionaryLoaderException
 
 dictionaries = {
     JSON_EXTENSION.lower(): json_dict,
     RTF_EXTENSION.lower(): rtfcre_dict,
+    PYTHON_EXTENSION.lower(): python_dict,
 }
 
 def load_dictionary(filename):
