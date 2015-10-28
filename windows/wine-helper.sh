@@ -368,7 +368,7 @@ helper_dist()
   export PYTHONPATH="dist/plover-$version-py2.7.egg"
   winecmd wine pyinstaller.exe windows/plover.spec
   )
-  cp -v plover.cfg briefs.json mecatipia.py dist/Plover/
+  cp -v plover.cfg briefs.json mecatipia.py mecatipia.json dist/Plover/
   mv -v dist/Plover "dist/Plover-$version"
 
 

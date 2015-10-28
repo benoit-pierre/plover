@@ -65,18 +65,9 @@ COMBOS = {
 }
 MAX_COMBO_LEN = 0
 
-BASE_DICTIONARY = {
-    '*#'  : u'{^}{-|}',
-    '#A'  : u'{^.}',
-    '#AO' : u'{^;}',
-    '#I'  : u'{^?}',
-    '#O'  : u'{^,}',
-    '#-R' : u'{^: }',
-    '-s'  : u'{^ ^}',
-}
-
 WORD_PARTS = {}
 MAX_WORD_PART_LEN = 0
+
 
 def strokes_to_steno(stroke):
     if isinstance(stroke[0], (tuple, list)):
@@ -380,9 +371,6 @@ for steno, translation in COMBOS.items():
 COMBOS = combos
 MAX_COMBO_LEN = max(len(combo) for combo in COMBOS)
 
-BASE_DICTIONARY = dict((steno_to_strokes(steno), translation)
-              for steno, translation in BASE_DICTIONARY.items())
-
 for combo, part in COMBOS.items():
     if part in WORD_PARTS:
         WORD_PARTS[part] += (combo,)
@@ -409,8 +397,6 @@ def lookup_translation(key):
     if len(strokes) == 2 and strokes[0] not in (('*-',), ('#-',)):
         raise KeyError()
     strokes = tuple(strokes)
-    if strokes in BASE_DICTIONARY:
-        return BASE_DICTIONARY[strokes]
     try:
         text = strokes_to_text(strokes)
     except ValueError:
