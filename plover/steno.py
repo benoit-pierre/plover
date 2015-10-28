@@ -12,19 +12,16 @@ Stroke -- A data model class that encapsulates a sequence of steno keys.
 """
 
 import re
+import mecatipia
 
 STROKE_DELIMITER = '/'
-IMPLICIT_HYPHENS = set('AOEU*50')
+IMPLICIT_HYPHENS = set(mecatipia.IMPLICIT_HYPHENS)
 
 def normalize_steno(strokes_string):
     """Convert steno strings to one common form."""
     strokes = strokes_string.split(STROKE_DELIMITER)
     normalized_strokes = []
     for stroke in strokes:
-        if '#' in stroke:
-            stroke = stroke.replace('#', '')
-            if not re.search('[0-9]', stroke):
-                stroke = '#' + stroke
         has_implicit_dash = bool(set(stroke) & IMPLICIT_HYPHENS)
         if has_implicit_dash:
             stroke = stroke.replace('-', '')
@@ -33,41 +30,9 @@ def normalize_steno(strokes_string):
         normalized_strokes.append(stroke)
     return tuple(normalized_strokes)
 
-STENO_KEY_NUMBERS = {'S-': '1-',
-                     'T-': '2-',
-                     'P-': '3-',
-                     'H-': '4-',
-                     'A-': '5-',
-                     'O-': '0-',
-                     '-F': '-6',
-                     '-P': '-7',
-                     '-L': '-8',
-                     '-T': '-9'}
+STENO_KEY_NUMBERS = {}
 
-STENO_KEY_ORDER = {"#": 0,
-                   "S-": 1,
-                   "T-": 2,
-                   "K-": 3,
-                   "P-": 4,
-                   "W-": 5,
-                   "H-": 6,
-                   "R-": 7,
-                   "A-": 8,
-                   "O-": 9,
-                   "*": 10,
-                   "-E": 11,
-                   "-U": 12,
-                   "-F": 13,
-                   "-R": 14,
-                   "-P": 15,
-                   "-B": 16,
-                   "-L": 17,
-                   "-G": 18,
-                   "-T": 19,
-                   "-S": 20,
-                   "-D": 21,
-                   "-Z": 22}
-
+STENO_KEY_ORDER = dict((l, n) for n, l in enumerate(mecatipia.LETTERS))
 
 class Stroke:
     """A standardized data model for stenotype machine strokes.
@@ -82,7 +47,7 @@ class Stroke:
 
     """
 
-    IMPLICIT_HYPHEN = set(('A-', 'O-', '5-', '0-', '-E', '-U', '*'))
+    IMPLICIT_HYPHEN = set(mecatipia.steno_to_strokes(mecatipia.IMPLICIT_HYPHENS)[0])
 
     def __init__(self, steno_keys) :
         """Create a steno stroke by formatting steno keys.
@@ -121,7 +86,7 @@ class Stroke:
         self.steno_keys = steno_keys
 
         # Determine if this stroke is a correction stroke.
-        self.is_correction = (self.rtfcre == '*')
+        self.is_correction = (self.rtfcre == '#U')
 
     def __str__(self):
         if self.is_correction:

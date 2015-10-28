@@ -296,7 +296,7 @@ def _translate_stroke(stroke, state, dictionary, callback):
     callback(undo, do, state.last())
     state.translations.extend(do)
 
-SUFFIX_KEYS = ['-S', '-G', '-Z', '-D']
+SUFFIX_KEYS = ['-S', '-s']
 
 def _toggle_asterisk(translations, undo, do):
     replaced = translations[len(translations)-1:]
