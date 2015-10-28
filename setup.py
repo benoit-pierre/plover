@@ -35,6 +35,7 @@ setuptools.setup(
     ],
     entry_points = {
         'console_scripts' : [ 'plover = plover.main:main' ],
+        'setuptools.installation' : [ 'eggsecutable = plover.main:main' ],
     },
     packages = [
         'plover', 'plover.machine', 'plover.gui',
