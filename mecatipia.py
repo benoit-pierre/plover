@@ -6,7 +6,21 @@ LETTERS = (
     'i',
     '-U', '-E', '-A', '-O', '-I', '-R', '-N', '-S', '-L', '-s',
 )
+
 IMPLICIT_HYPHENS = 'iUEAOI'
+
+NUMBERS = {
+    '-U' : 1,
+    '-E' : 6,
+    '-A' : 2,
+    '-O' : 7,
+    '-I' : 3,
+    '-R' : 8,
+    '-N' : 4,
+    '-S' : 9,
+    '-L' : 5,
+    '-s' : 0,
+}
 
 COMBOS = {
     'SP' : u'ex',
@@ -194,6 +208,19 @@ def strokes_to_text(stroke):
                     part = add_accent(part, accent_index)
                 accent_stroke = None
             text += part
+        return text
+    # Numbers.
+    if len(stroke) >= 2 and '*-' == stroke[0] and \
+       LETTERS.index(stroke[1]) > LETTERS.index('i'):
+        numbers = []
+        for l in stroke[1:]:
+            numbers.append(NUMBERS[l])
+        # Sort based on weight.
+        numbers.sort()
+        # Fix 0: it has the highest weight.
+        if 0 == numbers[0]:
+            numbers = numbers[1:] + [0]
+        text = ''.join(str(n) for n in numbers)
         return text
     text = ''
     while len(stroke) > 0:
