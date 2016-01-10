@@ -38,13 +38,12 @@ class Logger(object):
 
     def __init__(self):
         self._print_handler = PrintHandler()
-        self._print_handler.setLevel(WARNING)
         self._file_handler = FileHandler()
         self._file_handler.setLevel(INFO)
         self._logger = logging.getLogger('plover')
         self._logger.addHandler(self._print_handler)
         self._logger.addHandler(self._file_handler)
-        self._logger.setLevel(INFO)
+        self._logger.setLevel(WARNING)
         self._stroke_logger = logging.getLogger('plover-strokes')
         self._stroke_logger.setLevel(INFO)
         self._stroke_handler = None

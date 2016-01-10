@@ -49,6 +49,7 @@ class SimpleNamespace(object):
 
 def init_engine(engine, config):
     """Initialize a StenoEngine from a config object."""
+    log.set_level(log.DEBUG)
     engine.set_theory(config.get_theory_name(),
                       config.get_theory_file())
     reset_machine(engine, config)
