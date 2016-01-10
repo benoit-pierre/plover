@@ -34,6 +34,8 @@ import plover.dictionary.rtfcre_dict as rtfcre_dict
 from plover.machine.registry import machine_registry, NoSuchMachineException
 from plover import log
 from plover.dictionary.loading_manager import manager as dict_manager
+from plover import theory
+from plover.oslayer.config import CONFIG_DIR
 
 # Because 2.7 doesn't have this yet.
 class SimpleNamespace(object):
@@ -47,6 +49,8 @@ class SimpleNamespace(object):
 
 def init_engine(engine, config):
     """Initialize a StenoEngine from a config object."""
+    engine.set_theory(config.get_theory_name(),
+                      config.get_theory_file())
     reset_machine(engine, config)
     
     dictionary_file_names = config.get_dictionary_file_names()
@@ -167,6 +171,12 @@ class StenoEngine(object):
         self.command_only_output = SimpleNamespace()
         self.running_state = self.translator.get_state()
         self.set_is_running(False)
+
+    def set_theory(self, name, filename):
+        try:
+            theory.setup(name, filename)
+        except Exception as e:
+            raise InvalidConfigurationError('could not set theory: %s' % unicode(e))
 
     def set_machine(self, machine):
         if self.machine:

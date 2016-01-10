@@ -3,8 +3,12 @@
 
 """Unit tests for formatting.py."""
 
-import formatting
+from plover import formatting
+from plover import theory
+
 import unittest
+
+theory.setup('Plover')
 
 # Add tests with partial output specified.
 
