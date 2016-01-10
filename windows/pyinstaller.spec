@@ -1,7 +1,7 @@
 # -*- mode: python -*-
 a = Analysis(['..\\launch.py'],
              pathex=['..'],
-             hiddenimports=[],
+             hiddenimports=['plover.theory.default'],
              hookspath=None)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

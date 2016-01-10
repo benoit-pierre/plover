@@ -4,7 +4,11 @@
 """Unit tests for formatting.py."""
 
 from plover import formatting
+from plover import theory
+
 import unittest
+
+theory.setup('Plover')
 
 # Add tests with partial output specified.
 

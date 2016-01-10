@@ -110,6 +110,12 @@ DEFAULT_KEYBOARD_CONFIG_FRAME_X = -1
 KEYBOARD_CONFIG_FRAME_Y_OPTION = 'y'
 DEFAULT_KEYBOARD_CONFIG_FRAME_Y = -1
 
+THEORY_CONFIG_SECTION = 'Theory Configuration'
+THEORY_NAME_OPTION = 'name'
+DEFAULT_THEORY_CONFIG_NAME = 'Plover'
+THEORY_FILE_OPTION = 'file'
+DEFAULT_THEORY_CONFIG_FILE = None
+
 # Dictionary constants.
 JSON_EXTENSION = '.json'
 RTF_EXTENSION = '.rtf'
@@ -449,6 +455,25 @@ class Config(object):
         return self._get_int(KEYBOARD_CONFIG_FRAME_SECTION, 
                              KEYBOARD_CONFIG_FRAME_Y_OPTION,
                              DEFAULT_KEYBOARD_CONFIG_FRAME_Y)
+
+    def set_theory_name(self, theory):
+        self._set(THEORY_CONFIG_SECTION, THEORY_NAME_OPTION, theory)
+
+    def get_theory_name(self):
+        return self._get(THEORY_CONFIG_SECTION,
+                         THEORY_NAME_OPTION,
+                         DEFAULT_THEORY_CONFIG_NAME)
+
+    def set_theory_file(self, filename):
+        filename = self._path_to_config_value(filename)
+        self._set(THEORY_CONFIG_SECTION, THEORY_FILE_OPTION, filename)
+
+    def get_theory_file(self):
+        filename = self._get(THEORY_CONFIG_SECTION, THEORY_FILE_OPTION,
+                             DEFAULT_THEORY_CONFIG_FILE)
+        if filename is None:
+            return None
+        return self._path_from_config_value(filename)
 
     def _set(self, section, option, value):
         if not self._config.has_section(section):
