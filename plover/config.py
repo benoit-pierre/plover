@@ -120,6 +120,7 @@ DEFAULT_THEORY_CONFIG_FILE = None
 # Dictionary constants.
 JSON_EXTENSION = '.json'
 RTF_EXTENSION = '.rtf'
+PYTHON_EXTENSION = '.py'
 
 # Logging constants.
 LOG_EXTENSION = '.log'
