@@ -163,7 +163,7 @@ class StenoDictionaryCollection(object):
     def casereverse_lookup(self, value):
         for d in self.dicts:
             if hasattr(d, 'reverse_lookup'):
-                key = d.reverse_lookup(value.lower())
+                key = set((value.lower(),))
             else:
                 key = d.casereverse.get(value, None)
             if key:
