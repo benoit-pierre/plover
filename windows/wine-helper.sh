@@ -356,8 +356,7 @@ helper_dist()
   )
   mkdir dist/Plover
   mv dist/plover.exe dist/Plover/
-  cp -v plover.cfg briefs.json kinglet.{json,py} dist/Plover/
-  for d in main commands user; do echo '{}' >"dist/Plover/$d.json"; done
+  cp -v plover.cfg kinglet.py briefs.json dist/Plover/
   mv -v dist/Plover "dist/Plover-$version"
 
   # Pack archive.

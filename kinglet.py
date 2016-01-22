@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 # vim: set fileencoding=utf-8 :
 
-import re
-
 # Required theory constants. {{{
 
 # 2WS3ED4RF5TG_XCVBNM,6YH7UJ8IK9OL
@@ -53,6 +51,12 @@ KEYBOARD_KEYMAP = (
 # }}}
 
 # Theory implementation. {{{
+
+import re
+
+import stroke
+
+stroke.setup(LETTERS, IMPLICIT_HYPHEN_LETTERS)
 
 # System keymap, used for one letter strokes.
 SYSTEM_KEYMAP = {
@@ -203,128 +207,100 @@ WORD_PARTS = {}
 MAX_WORD_PART_LEN = 0
 
 
-def strokes_to_steno(stroke):
-    if () == stroke:
-        return ''
-    if isinstance(stroke[0], (tuple, list)):
-        return '/'.join(strokes_to_steno(s) for s in stroke)
-    s = ''.join(stroke)
-    return s.replace('-', '')
+class Stroke(stroke.Stroke):
 
-def steno_to_strokes(steno):
-    stroke_list = []
-    for stroke_steno in steno.split('/'):
-        stroke = [l for l in stroke_steno]
-        stroke_list.append(tuple(stroke))
-    return tuple(stroke_list)
-
-def strokes_weight(stroke):
-    if isinstance(stroke[0], (tuple, list)):
-        return '/'.join(strokes_weight(s) for s in stroke)
-    s = ''
-    for l in stroke:
-        s += chr(ord('a') + LETTERS.index(l))
-    return s
-
-def strokes_to_text(stroke, cap_state=None):
-    if () == stroke:
-        return u''
-    if isinstance(stroke[0], (tuple, list)):
+    def to_text(self, cap_state=None, use_keymap=False):
+        keys = self.keys()
+        # Single letter stroke: use keymap.
+        if use_keymap and len(keys) == 1:
+            return SYSTEM_KEYMAP[keys[0]]
         text = u''
-        for s in stroke:
-            part = strokes_to_text(s, cap_state=cap_state)
-            text += part
-        return text
-    # Single letter stroke: use keymap.
-    if len(stroke) == 1:
-        return SYSTEM_KEYMAP[stroke[0]]
-    text = u''
-    while len(stroke) > 0:
-        combo = stroke[0:MAX_COMBO_LEN]
-        while len(combo) > 0:
-            if combo in COMBOS:
-                part = COMBOS[combo]
-                text += part
-                break
-            combo = combo[:-1]
-        if 0 == len(combo):
-            raise ValueError
-        assert len(combo) > 0
-        stroke = stroke[len(combo):]
-    # [cap] support.
-    if cap_state is None:
-        final_text = text
-    else:
-        final_text = u''
-        for part in re.split(r'(\|+)', text):
-            if not part:
-                continue
-            if u'||' == part:
-                cap_state['capslock'] = True
-            elif u'|' == part:
-                if cap_state['capslock']:
-                    assert not cap_state['shift']
-                    cap_state['capslock'] = False
+        while keys:
+            combo = Stroke(keys[0:MAX_COMBO_LEN])
+            while combo:
+                if combo in COMBOS:
+                    part = COMBOS[combo]
+                    text += part
+                    break
+                combo -= combo.last()
+            if not combo:
+                raise KeyError
+            keys = keys[len(combo):]
+        # [cap] support.
+        if cap_state is None:
+            final_text = text
+        else:
+            final_text = u''
+            for part in re.split(r'(\|+)', text):
+                if not part:
+                    continue
+                if u'||' == part:
+                    cap_state['capslock'] = True
+                elif u'|' == part:
+                    if cap_state['capslock']:
+                        assert not cap_state['shift']
+                        cap_state['capslock'] = False
+                    else:
+                        cap_state['shift'] = True
                 else:
-                    cap_state['shift'] = True
-            else:
-                if cap_state['shift']:
-                    assert not cap_state['capslock']
-                    cap_state['shift'] = False
-                    final_text += part.capitalize()
-                elif cap_state['capslock']:
-                    final_text += part.upper()
-                else:
-                    final_text += part
-    return final_text
+                    if cap_state['shift']:
+                        assert not cap_state['capslock']
+                        cap_state['shift'] = False
+                        final_text += part.capitalize()
+                    elif cap_state['capslock']:
+                        final_text += part.upper()
+                    else:
+                        final_text += part
+        return final_text
 
-def text_to_strokes(text):
+def strokes_to_text(stroke_list, cap_state=None):
+    return u''.join(s.to_text(cap_state) for s in stroke_list)
+
+def strokes_from_text(text):
     leftover_text = text
     # [cap] support.
     leftover_text = re.sub(r'([A-Z][A-Z]+)', lambda m: '||' + m.group(1).lower() + '|', leftover_text)
     leftover_text = re.sub(r'([A-Z])', lambda m: '|' + m.group(1).lower(), leftover_text)
     stroke_list = []
     part_list = []
-    stroke = []
+    stroke = Stroke()
     while len(leftover_text) > 0:
         # Find candidate parts.
         combo_list = []
         part = leftover_text[0:MAX_WORD_PART_LEN]
         while len(part) > 0:
-            if part in WORD_PARTS:
-                combo_list.extend(WORD_PARTS[part])
+            combo_list.extend(WORD_PARTS.get(part, ()))
             part = part[:-1]
         if 0 == len(combo_list):
             return ()
-        assert len(combo_list) > 0
-        # Prefer combo starting with lowest steno key order.
-        combo_list = sorted(combo_list, key=lambda s: LETTERS.index(s[0]))
         # First try to extend current stroke.
         part = None
-        if len(stroke) > 0:
-            stroke_last_letter_weight = LETTERS.index(stroke[-1])
+        if stroke:
             for combo in combo_list:
-                if stroke_last_letter_weight < LETTERS.index(combo[0]):
+                if stroke.is_prefix(combo):
                     # Check if we're not changing the translation.
-                    wanted = strokes_to_text(tuple(stroke) + combo)
-                    result = strokes_to_text(tuple(stroke)) + COMBOS[combo]
+                    wanted = stroke.to_text(use_keymap=False) + COMBOS[combo]
+                    result = (stroke + combo).to_text()
                     if wanted != result:
                         continue
-                    stroke.extend(combo)
+                    stroke += combo
                     part = COMBOS[combo]
                     part_list[-1] += part
                     break
         # Start a new stroke
         if part is None:
+            if stroke:
+                stroke_list.append(stroke)
             combo = combo_list[0]
-            stroke = list(combo)
-            stroke_list.append(stroke)
+            stroke = combo
             part = COMBOS[combo]
             part_list.append(part)
         assert len(part) > 0
         leftover_text = leftover_text[len(part):]
+    if stroke:
+        stroke_list.append(stroke)
     assert len(stroke_list) == len(part_list)
-    return tuple(tuple(s) for s in stroke_list)
+    return stroke_list
 
 
 n = 0
@@ -338,10 +314,9 @@ for cluster_size, cluster_combos in CLUSTERS:
             k = int(k)
             assert 1 <= k <= cluster_size, '%u/%u' % (k, cluster_size)
             steno += cluster[k-1]
-        strokes = steno_to_strokes(steno)
-        assert 1 == len(strokes)
-        assert strokes[0] not in COMBOS
-        COMBOS[strokes[0]] = translation
+        stroke = Stroke(steno)
+        assert stroke not in COMBOS
+        COMBOS[stroke] = translation
 assert n == len(LETTERS)
 MAX_COMBO_LEN = max(len(combo) for combo in COMBOS)
 
@@ -353,8 +328,7 @@ for combo, part in COMBOS.items():
 for part, combo_list in WORD_PARTS.items():
     # We want left combos to be given priority over right ones,
     # e.g. 'R-' over '-R' for 'r'.
-    combo_list = sorted(combo_list, key=lambda s: strokes_weight(s))
-    WORD_PARTS[part] = combo_list
+    WORD_PARTS[part] = sorted(combo_list)
 MAX_WORD_PART_LEN = max(len(part) for part in WORD_PARTS.keys())
 
 # }}}
@@ -369,24 +343,15 @@ CAP_STATE = {
 }
 
 def lookup_translation(key):
-    strokes = []
-    for steno in key:
-        strokes.extend(steno_to_strokes(steno))
-    if len(strokes) > MAXIMUM_KEY_LENGTH:
-        raise KeyError()
-    strokes = tuple(strokes)
-    try:
-        text = strokes_to_text(strokes, CAP_STATE)
-    except ValueError:
-        raise KeyError
-    return '{^%s}' % text
+    assert len(key) <= MAXIMUM_KEY_LENGTH
+    stroke_list = [Stroke(s) for s in key]
+    return '{^%s}' % strokes_to_text(stroke_list, cap_state=CAP_STATE)
 
 def reverse_lookup(text):
-    strokes = text_to_strokes(text)
-    if () == strokes:
-        return None
-    steno = [strokes_to_steno(s) for s in strokes]
-    return (steno,)
+    stroke_list = strokes_from_text(text)
+    if not stroke_list:
+        return []
+    return [tuple(str(s) for s in stroke_list)]
 
 # }}}
 
@@ -411,8 +376,7 @@ if __name__ == '__main__':
                     assert ']' == part[-1]
                     text += part[1:-2]
                 else:
-                    strokes = steno_to_strokes(part)
-                    text += strokes_to_text(strokes, cap_state)
+                    text += Stroke(part).to_text(cap_state)
         print text
     else:
         # text -> steno.
@@ -430,8 +394,7 @@ if __name__ == '__main__':
                 if steno:
                     steno += '/'
                 if part[0] in supported_chars:
-                    strokes = text_to_strokes(part)
-                    steno += strokes_to_steno(strokes)
+                    steno += '/'.join(str(s) for s in strokes_from_text(part))
                 else:
                     steno += '[' + ']/['.join(part) + ']'
         steno = steno.replace('_', '[ ]')
