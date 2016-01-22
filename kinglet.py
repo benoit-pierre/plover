@@ -5,20 +5,20 @@ import re
 
 # Required theory constants. {{{
 
-# _XCVBNM,4RF5TG6YH7UJ2WS3ED8IK9OL
+# 2WS3ED4RF5TG_XCVBNM,6YH7UJ8IK9OL
 LETTERS = (
-    # Thumbs.
-    '_', # Space
-    'X', 'C', 'V', 'B', 'N', 'M', ',',
-    # Left fore and middle fingers.
-    '4', 'R', 'F',
-    '5', 'T', 'G',
-    # Right fore and middle fingers.
-    '6', 'Y', 'H',
-    '7', 'U', 'J',
     # Left third and little fingers.
     '2', 'W', 'S',
     '3', 'E', 'D',
+    # Left fore and middle fingers.
+    '4', 'R', 'F',
+    '5', 'T', 'G',
+    # Thumbs.
+    '_', # Space
+    'X', 'C', 'V', 'B', 'N', 'M', ',',
+    # Right fore and middle fingers.
+    '6', 'Y', 'H',
+    '7', 'U', 'J',
     # Right third and little fingers.
     '8', 'I', 'K',
     '9', 'O', 'L',
@@ -184,14 +184,14 @@ for combo, translation in LEFT_CLUSTER_COMBOS.items():
     RIGHT_CLUSTER_COMBOS[combo] = translation
 # Final list of all clusters.
 CLUSTERS = (
-    # Thumbs.
-    (8, THUMB_CLUSTER_COMBOS),
-    # Left fore and middle fingers.
-    (6, LEFT_CLUSTER_COMBOS),
-    # Right fore and middle fingers.
-    (6, RIGHT_CLUSTER_COMBOS),
     # Left third and little fingers.
     (6, LEFT_CLUSTER_COMBOS),
+    # Left fore and middle fingers.
+    (6, LEFT_CLUSTER_COMBOS),
+    # Thumbs.
+    (8, THUMB_CLUSTER_COMBOS),
+    # Right fore and middle fingers.
+    (6, RIGHT_CLUSTER_COMBOS),
     # Right third and little fingers.
     (6, RIGHT_CLUSTER_COMBOS),
 )
