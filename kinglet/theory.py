@@ -1,73 +1,14 @@
-#!/usr/bin/env python2
 # vim: set fileencoding=utf-8 :
-
-# Required theory constants. {{{
-
-# 1QA2WS3ED4RF5TG_XCVBNM,6YH7UJ8IK9OL0P;
-#
-# 123 45 67 890
-# QWE RT YU IOP
-# ASD FG HK KL;
-#    XCVBNM,
-#       _
-#
-LETTERS = (
-    # Left third and little fingers.
-    '1', 'Q', 'A',
-    '2', 'W', 'S',
-    '3', 'E', 'D',
-    # Left fore and middle fingers.
-    '4', 'R', 'F',
-    '5', 'T', 'G',
-    # Thumbs.
-    '_', # Space
-    'X', 'C', 'V', 'B', 'N', 'M', ',',
-    # Right fore and middle fingers.
-    '6', 'Y', 'H',
-    '7', 'U', 'J',
-    # Right third and little fingers.
-    '8', 'I', 'K',
-    '9', 'O', 'L',
-    '0', 'P', ';',
-)
-
-IMPLICIT_HYPHEN_LETTERS = LETTERS
-
-SUFFIX_LETTERS = ()
-
-NUMBER_LETTER = ''
-
-NUMBERS = {}
-
-UNDO_STROKE_STENO = ''
-
-ORTHOGRAPHY_RULES = []
-
-ORTHOGRAPHY_RULES_ALIASES = {}
-
-ORTHOGRAPHY_WORDLIST = None
-
-KEYBOARD_KEYMAP = (
-    ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6'), ('7', '7'), ('8', '8'), ('9', '9'), ('0', '0'),
-    ('Q', 'q'), ('W', 'w'), ('E', 'e'), ('R', 'r'), ('T', 't'), ('Y', 'y'), ('U', 'u'), ('I', 'i'), ('O', 'o'), ('P', 'p'),
-    ('A', 'a'), ('S', 's'), ('D', 'd'), ('F', 'f'), ('G', 'g'), ('H', 'h'), ('J', 'j'), ('K', 'k'), ('L', 'l'), (';', ';'),
-    ('X', 'x'), ('C', 'c'), ('V', 'v'), ('B', 'b'), ('N', 'n'), ('M', 'm'), (',', ','),
-    ('_', ('space')),
-    ('no-op', ()),
-    ('arpeggiate', ()),
-)
-
-# }}}
-
-# Theory implementation. {{{
 
 import re
 
-import stroke
+from kinglet.system import *
+from kinglet import stroke
 
 from text_table import parse_text_table
 
-stroke.setup(LETTERS, IMPLICIT_HYPHEN_LETTERS)
+
+stroke.setup(KEYS, IMPLICIT_HYPHEN_KEYS)
 
 # System keymap, used for one letter strokes.
 SYSTEM_KEYMAP = {
@@ -105,7 +46,7 @@ def parse_combos(cluster, key_mapping):
 '''
 Use the following in VIM to make editing clusters easier:
 
-pyfile vim_toggle_on_off.py
+pyfile misc/vim_toggle_on_off.py
 nmap <buffer> <space> :python toggle_on_off()<CR>
 nnoremap <buffer> <RightMouse> <LeftMouse>:python toggle_on_off()<CR>
 '''
@@ -251,6 +192,7 @@ def mirror_combos(base_combos, mapping):
         combo = ''.join(combo)
         mirrored_combos[combo] = translation
     return mirrored_combos
+
 # 147 14    41 741
 # 258 25 -> 52 852
 # 369 36    63 963
@@ -334,7 +276,6 @@ def strokes_from_text(text):
     leftover_text = re.sub(r'([A-Z])', lambda m: '|' + m.group(1).lower(), leftover_text)
     stroke_list = []
     part_list = []
-    stroke = Stroke()
     while len(leftover_text) > 0:
         # Find candidate parts.
         combo_list = []
@@ -346,7 +287,8 @@ def strokes_from_text(text):
             return ()
         # First try to extend current stroke.
         part = None
-        if stroke:
+        if stroke_list:
+            stroke = stroke_list[-1]
             for combo in combo_list:
                 if stroke.is_prefix(combo):
                     # Check if we're not changing the translation.
@@ -354,41 +296,37 @@ def strokes_from_text(text):
                     result = (stroke + combo).to_text()
                     if wanted != result:
                         continue
-                    stroke += combo
+                    stroke_list[-1] += combo
                     part = COMBOS[combo]
                     part_list[-1] += part
                     break
         # Start a new stroke
         if part is None:
-            if stroke:
-                stroke_list.append(stroke)
             combo = combo_list[0]
-            stroke = combo
+            stroke_list.append(combo)
             part = COMBOS[combo]
             part_list.append(part)
         assert len(part) > 0
         leftover_text = leftover_text[len(part):]
-    if stroke:
-        stroke_list.append(stroke)
     assert len(stroke_list) == len(part_list)
     return stroke_list
 
 
 n = 0
 for cluster_size, cluster_combos in CLUSTERS:
-    cluster = LETTERS[n:n+cluster_size]
+    cluster = KEYS[n:n+cluster_size]
     assert len(cluster) == cluster_size
     n += cluster_size
     for combo, translation in cluster_combos.items():
-        keys = []
+        steno = ''
         for k in combo.strip():
             k = int(k)
             assert 1 <= k <= cluster_size, '%u/%u' % (k, cluster_size)
-            keys.append(cluster[k-1])
-        stroke = Stroke(keys)
+            steno += cluster[k-1]
+        stroke = Stroke(steno)
         assert stroke not in COMBOS
         COMBOS[stroke] = translation
-assert n == len(LETTERS)
+assert n == len(KEYS)
 MAX_COMBO_LEN = max(len(combo) for combo in COMBOS)
 
 for combo, part in COMBOS.items():
@@ -401,78 +339,5 @@ for part, combo_list in WORD_PARTS.items():
     # e.g. 'R-' over '-R' for 'r'.
     WORD_PARTS[part] = sorted(combo_list)
 MAX_WORD_PART_LEN = max(len(part) for part in WORD_PARTS.keys())
-
-# }}}
-
-# Required interface for Plover "Python" dictionary. {{{
-
-MAXIMUM_KEY_LENGTH = 1
-
-CAP_STATE = {
-    'shift': False,
-    'capslock': False,
-}
-
-def lookup_translation(key):
-    assert len(key) <= MAXIMUM_KEY_LENGTH
-    stroke_list = [Stroke(s) for s in key]
-    return '{^%s}' % strokes_to_text(stroke_list,
-                                     cap_state=CAP_STATE,
-                                     use_keymap=True)
-
-def reverse_lookup(text):
-    stroke_list = strokes_from_text(text)
-    if not stroke_list:
-        return []
-    return [tuple(str(s) for s in stroke_list)]
-
-# }}}
-
-# Main entry-point for testing. {{{
-
-if __name__ == '__main__':
-    import sys
-    import re
-    if '/' == sys.argv[1]:
-        cap_state = {
-            'shift': False,
-            'capslock': False,
-        }
-        text = u''
-        # steno -> text.
-        for steno in sys.argv[2:]:
-            steno = steno.replace('[ ]', '_')
-            for part in steno.split('/'):
-                if not part:
-                    continue
-                if '[' == part[0]:
-                    assert ']' == part[-1]
-                    text += part[1:-2]
-                else:
-                    text += Stroke(part).to_text(cap_state)
-        print text
-    else:
-        # text -> steno.
-        supported_chars = set()
-        for part in WORD_PARTS:
-            supported_chars.update(part)
-            supported_chars.update(part.upper())
-        assert not set('/[]') & supported_chars
-        supported_chars -= set('|') # | is the special character for [cap].
-        supported_chars = ''.join(sorted(supported_chars))
-        rx = re.compile('([^' + supported_chars.replace('-', '\\-') + ']+)')
-        steno = ''
-        for text in sys.argv[1:]:
-            for part in re.split(rx, text):
-                if steno:
-                    steno += '/'
-                if part[0] in supported_chars:
-                    steno += '/'.join(str(s) for s in strokes_from_text(part))
-                else:
-                    steno += '[' + ']/['.join(part) + ']'
-        steno = steno.replace('_', '[ ]')
-        print steno
-
-# }}}
 
 # vim: foldmethod=marker

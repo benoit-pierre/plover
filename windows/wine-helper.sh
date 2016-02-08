@@ -356,7 +356,7 @@ helper_dist()
   )
   mkdir dist/Plover
   mv dist/plover.exe dist/Plover/
-  cp -v plover.cfg kinglet.py briefs.json dist/Plover/
+  cp -v --parents plover.cfg kinglet_dictionary.py kinglet_theory.py kinglet/*.py briefs.json dist/Plover/
   mv -v dist/Plover "dist/Plover-$version"
 
   # Pack archive.

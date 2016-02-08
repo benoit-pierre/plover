@@ -39,3 +39,6 @@ if isfile(join(PROGRAM_DIR, 'plover.cfg')):
     CONFIG_DIR = PROGRAM_DIR
 else:
     CONFIG_DIR = appdirs.user_data_dir('plover', 'plover')
+
+sys.path.insert(0, CONFIG_DIR)
+
