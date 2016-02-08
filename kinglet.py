@@ -324,8 +324,8 @@ class Stroke(stroke.Stroke):
                         final_text += part
         return final_text
 
-def strokes_to_text(stroke_list, cap_state=None):
-    return u''.join(s.to_text(cap_state) for s in stroke_list)
+def strokes_to_text(stroke_list, cap_state=None, use_keymap=False):
+    return u''.join(s.to_text(cap_state, use_keymap) for s in stroke_list)
 
 def strokes_from_text(text):
     leftover_text = text
@@ -416,7 +416,9 @@ CAP_STATE = {
 def lookup_translation(key):
     assert len(key) <= MAXIMUM_KEY_LENGTH
     stroke_list = [Stroke(s) for s in key]
-    return '{^%s}' % strokes_to_text(stroke_list, cap_state=CAP_STATE)
+    return '{^%s}' % strokes_to_text(stroke_list,
+                                     cap_state=CAP_STATE,
+                                     use_keymap=True)
 
 def reverse_lookup(text):
     stroke_list = strokes_from_text(text)
