@@ -65,6 +65,8 @@ import re
 
 import stroke
 
+from text_table import parse_text_table
+
 stroke.setup(LETTERS, IMPLICIT_HYPHEN_LETTERS)
 
 # System keymap, used for one letter strokes.
@@ -83,33 +85,21 @@ SPACE_CHAR = u'_'
 
 def parse_combos(cluster, key_mapping):
     key_mapping = ''.join(key_mapping.strip().split())
-    combo_text = None
-    combo_keys = u''
     combos = {}
-    for row in cluster.strip().split('\n') + ['\n',]: # Extra empty line to finish last combo.
-        row = row.strip()
-        if row:
-            cells = row.split()
-            assert 1 <= len(cells) <= 2
-            if len(cells) > 1:
-                assert combo_text is None
-                combo_text = cells[1]#.strip()
-            combo_keys += cells[0]
-            continue
-        assert len(combo_keys) == len(key_mapping)
-        keys = []
-        for n, char in enumerate(combo_keys):
-            assert char in (KEY_PRESSED, KEY_RELEASED)
-            if char == KEY_PRESSED:
-                keys.append(key_mapping[n])
-        keys.sort()
-        keys = u''.join(keys)
-        assert keys, u'invalid empty combo for %s' % combo_text
-        text = combo_text.replace(SPACE_CHAR, u' ')
-        assert text not in combos, u'combo mapped multiple times: %s and %s' % (text, combos[keys])
-        combos[keys] = text
-        combo_text = None
-        combo_keys = []
+    for row in parse_text_table(cluster):
+        assert 0 == (len(row) % 2)
+        for c in range(0, len(row), 2):
+            text = row[c].strip().replace(SPACE_CHAR, u' ')
+            keys = []
+            for n, char in enumerate(u''.join(l.strip() for l in row[c + 1])):
+                assert char in (u'\n', u' ', KEY_PRESSED, KEY_RELEASED)
+                if char == KEY_PRESSED:
+                    keys.append(key_mapping[n])
+            keys.sort()
+            keys = u''.join(keys)
+            assert keys, u'invalid empty combo for %s' % text
+            assert text not in combos, u'combo mapped multiple times: %s and %s' % (text, combos[keys])
+            combos[keys] = text
     return combos
 
 '''
@@ -128,149 +118,53 @@ THUMB_CLUSTER_MAPPING = u'''
 THUMB_CLUSTER_COMBOS = parse_combos(
 u'''
 
-□□□■□□□  a
-   □
+    a  □□□■□□□    q  ■□□□■■□    nd ■□□□■□□
+          □             □             □
 
-□■■■■□□  b
-   □
+    b  □■■■■□□    r  □■□■□□□    on □■■□■■□
+          □             □             □
 
-□□■■□□□  c
-   □
+    c  □□■■□□□    s  □■□□■□□    or ■□□□□■□
+          □             □             □
 
-□■□□□■□  d
-   □
+    d  □■□□□■□    t  □□□□■□□    re □□■■■■□
+          □             □             □
 
-□□■□□□□  e
-   □
+    e  □□■□□□□    u  □■■□□□□    te □■□□□□■
+          □             □             □
 
-□■■■□□□  f
-   □
+    f  □■■■□□□    v  □□□□■□■    th □□□■■□□
+          □             □             □
 
-□□■□■■□  g
-   □
+    g  □□■□■■□    w  □■□■■□□    ti □□■□□□■
+          □             □             □
 
-□□■□□■□  h
-   □
+    h  □□■□□■□    x  ■■■□□□□    -  □□□■■□■
+          □             □             □
 
-□□□□□■□  i
-   □
+    i  □□□□□■□    y  □□■■□■□    !  ■■□□□□□
+          □             □             □
 
-□□□□■■■  j
-   □
+    j  □□□□■■■    z  □■■□□□■    "  ■□■■□□□
+          □             □             □
 
-■□□■■□□  k
-   □
+    k  ■□□■■□□    an □■■□□■□    ,  ■□□■□□□
+          □             □             □
 
-□□□■□■□  l
-   □
+    l  □□□■□■□    at ■□□□□□□    .  □□□■□□■
+          □             □             □
 
-□□□□■■□  m
-   □
+    m  □□□□■■□    en □□□□□□■    ?  □□□□□■■
+          □             □             □
 
-□□■□■□□  n
-   □
+    n  □□■□■□□    er □■□□■■□    '  □□■■□□■
+          □             □             □
 
-□■□□□□□  o
-   □
+    o  □■□□□□□    he □□■■■□□    |  ■□■□□□□
+          □             □             □
 
-□□□■■■□  p
-   □
-
-■□□□■■□  q
-   □
-
-□■□■□□□  r
-   □
-
-□■□□■□□  s
-   □
-
-□□□□■□□  t
-   □
-
-□■■□□□□  u
-   □
-
-□□□□■□■  v
-   □
-
-□■□■■□□  w
-   □
-
-■■■□□□□  x
-   □
-
-□□■■□■□  y
-   □
-
-□■■□□□■  z
-   □
-
-□■■□□■□  an
-   □
-
-■□□□□□□  at
-   □
-
-□□□□□□■  en
-   □
-
-□■□□■■□  er
-   □
-
-□□■■■□□  he
-   □
-
-□■■□■□□  in
-   □
-
-■□□□■□□  nd
-   □
-
-□■■□■■□  on
-   □
-
-■□□□□■□  or
-   □
-
-□□■■■■□  re
-   □
-
-□■□□□□■  te
-   □
-
-□□□■■□□  th
-   □
-
-□□■□□□■  ti
-   □
-
-□□□■■□■  -
-   □
-
-■■□□□□□  !
-   □
-
-■□■■□□□  "
-   □
-
-■□□■□□□  ,
-   □
-
-□□□■□□■  .
-   □
-
-□□□□□■■  ?
-   □
-
-□□■■□□■  '
-   □
-
-■□■□□□□  |
-   □
-
-□□□□□□□  _
-   ■
+    p  □□□■■■□    in □■■□■□□    _  □□□□□□□
+          □             □             ■
 
 ''', THUMB_CLUSTER_MAPPING)
 
@@ -283,197 +177,29 @@ LEFT_OUTER_CLUSTER_MAPPING = u'''
 LEFT_OUTER_CLUSTER_COMBOS = parse_combos(
 u'''
 
-□□□
-□■■  a
-□□□
+    a  □□□    b  □■□    c  □□■    d  □■■    e  □□■    f  □□□    g  □□□    h  □□■
+       □■■       □■□       □□■       □■□       □□□       □■□       □■□       □■■
+       □□□       □□□       □□□       □□□       □□□       □□□       ■□□       □□□
 
-□■□
-□■□  b
-□□□
+    i  □□□    j  □□□    k  □□□    l  □□□    m  □□□    n  □□□    o  □■■    p  □■□
+       □□□       ■□□       □□■       □□■       □■■       □□■       □□□       □□□
+       □■■       □□□       ■□■       □■■       □■■       □■□       □□□       □□□
 
-□□■
-□□■  c
-□□□
+    q  ■□□    r  □□□    s  □□■    t  □□□    u  □■■    v  □□■    w  □■□    x  □□□
+       □□□       □■■       □■□       □□□       □■■       ■□□       ■□□       □□□
+       □□□       □■□       □□□       □□■       □□□       □□□       □□□       ■□■
 
-□■■
-□■□  d
-□□□
+    y  □□□    z  □□□    an ■■□    at □■□    en □□□    er □□□    he □□■    in □□□
+       ■■□       □□□       □□□       ■■□       □■□       □□□       □■■       □□□
+       □□□       ■□□       □□□       □□□       ■■□       ■■□       □■□       □■□
 
-□□■
-□□□  e
-□□□
+    nd ■■□    on □□□    or □□□    re □□□    te □□■    th □□□    ti □■□    -  □□□
+       ■□□       ■■□       ■□■       □■□       ■□■       □□■       ■■□       ■□■
+       □□□       ■□□       ■□□       □■□       □□□       □□■       ■□□       □□□
 
-□□□
-□■□  f
-□□□
-
-□□□
-□■□  g
-■□□
-
-□□■
-□■■  h
-□□□
-
-□□□
-□□□  i
-□■■
-
-□□□
-■□□  j
-□□□
-
-□□□
-□□■  k
-■□■
-
-□□□
-□□■  l
-□■■
-
-□□□
-□■■  m
-□■■
-
-□□□
-□□■  n
-□■□
-
-□■■
-□□□  o
-□□□
-
-□■□
-□□□  p
-□□□
-
-■□□
-□□□  q
-□□□
-
-□□□
-□■■  r
-□■□
-
-□□■
-□■□  s
-□□□
-
-□□□
-□□□  t
-□□■
-
-□■■
-□■■  u
-□□□
-
-□□■
-■□□  v
-□□□
-
-□■□
-■□□  w
-□□□
-
-□□□
-□□□  x
-■□■
-
-□□□
-■■□  y
-□□□
-
-□□□
-□□□  z
-■□□
-
-■■□
-□□□  an
-□□□
-
-□■□
-■■□  at
-□□□
-
-□□□
-□■□  en
-■■□
-
-□□□
-□□□  er
-■■□
-
-□□■
-□■■  he
-□■□
-
-□□□
-□□□  in
-□■□
-
-■■□
-■□□  nd
-□□□
-
-□□□
-■■□  on
-■□□
-
-□□□
-■□■  or
-■□□
-
-□□□
-□■□  re
-□■□
-
-□□■
-■□■  te
-□□□
-
-□□□
-□□■  th
-□□■
-
-□■□
-■■□  ti
-■□□
-
-□□□
-■□■  -
-□□□
-
-■□□
-■□□  !
-□□□
-
-□□■
-■□■  "
-■□□
-
-■■□
-■■□  ,
-□□□
-
-□□□
-■■□  .
-■■□
-
-□□□
-■□□  ?
-■□□
-
-■□■
-■□□  '
-□□□
-
-□□□
-□□■  |
-■□□
-
-□□□
-□□■  _
-□□□
+    !  ■□□    "  □□■    ,  ■■□    .  □□□    ?  □□□    '  ■□■    |  □□□    _  □□□
+       ■□□       ■□■       ■■□       ■■□       ■□□       ■□□       □□■       □□■
+       □□□       ■□□       □□□       ■■□       ■□□       □□□       ■□□       □□□
 
 ''', LEFT_OUTER_CLUSTER_MAPPING)
 
@@ -486,197 +212,29 @@ LEFT_INNER_CLUSTER_MAPPING = u'''
 LEFT_INNER_CLUSTER_COMBOS = parse_combos(
 u'''
 
-■□
-□□  a
-□□
+    a  ■□    b  ■■    c  ■■    d  □□    e  □□    f  □□    g  ■□    h  □□
+       □□       ■□       □□       ■□       ■□       ■■       ■□       □□
+       □□       ■■       □□       □■       □□       □■       □■       ■□
 
-■■
-■□  b
-■■
+    i  ■□    j  □■    k  □□    l  ■□    m  ■■    n  □□    o  □■    p  ■□
+       ■□       □■       ■■       □■       ■■       □■       □■       □■
+       □□       ■□       ■□       □□       □□       □■       □□       □■
 
-■■
-□□  c
-□□
+    q  □■    r  □□    s  □□    t  □■    u  ■■    v  □■    w  □□    x  ■■
+       □■       □□       ■□       □□       □■       ■□       □□       ■□
+       ■■       □■       ■□       □□       □□       □□       ■■       ■□
 
-□□
-■□  d
-□■
+    y  □□    z  □■    an ■■    at ■□    en ■□    er □□    he ■□    in ■□
+       ■□       □□       □■       □□       ■□       ■■       ■■       ■■
+       ■■       ■□       □■       ■■       ■□       ■■       □□       □■
 
-□□
-■□  e
-□□
+    nd □■    on ■■    or □■    re ■□    te □□    th □□    ti ■□    -  □■
+       □■       □□       ■■       □□       □■       ■■       □□       ■□
+       □■       □■       □□       □■       ■□       □□       ■□       ■□
 
-□□
-■■  f
-□■
-
-■□
-■□  g
-□■
-
-□□
-□□  h
-■□
-
-■□
-■□  i
-□□
-
-□■
-□■  j
-■□
-
-□□
-■■  k
-■□
-
-■□
-□■  l
-□□
-
-■■
-■■  m
-□□
-
-□□
-□■  n
-□■
-
-□■
-□■  o
-□□
-
-■□
-□■  p
-□■
-
-□■
-□■  q
-■■
-
-□□
-□□  r
-□■
-
-□□
-■□  s
-■□
-
-□■
-□□  t
-□□
-
-■■
-□■  u
-□□
-
-□■
-■□  v
-□□
-
-□□
-□□  w
-■■
-
-■■
-■□  x
-■□
-
-□□
-■□  y
-■■
-
-□■
-□□  z
-■□
-
-■■
-□■  an
-□■
-
-■□
-□□  at
-■■
-
-■□
-■□  en
-■□
-
-□□
-■■  er
-■■
-
-■□
-■■  he
-□□
-
-■□
-■■  in
-□■
-
-□■
-□■  nd
-□■
-
-■■
-□□  on
-□■
-
-□■
-■■  or
-□□
-
-■□
-□□  re
-□■
-
-□□
-□■  te
-■□
-
-□□
-■■  th
-□□
-
-■□
-□□  ti
-■□
-
-□■
-■□  -
-■□
-
-■■
-□□  !
-■□
-
-□■
-■■  "
-■□
-
-□■
-□□  ,
-□■
-
-■■
-□□  .
-■■
-
-□■
-□□  ?
-■■
-
-□□
-□■  '
-■■
-
-■■
-■□  |
-□□
-
-□□
-□■  _
-□□
+    !  ■■    "  □■    ,  □■    .  ■■    ?  □■    '  □□    |  ■■    _  □□
+       □□       ■■       □□       □□       □□       □■       ■□       □■
+       ■□       ■□       □■       ■■       ■■       ■■       □□       □□
 
 ''', LEFT_INNER_CLUSTER_MAPPING)
 
