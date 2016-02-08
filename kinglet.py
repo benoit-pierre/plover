@@ -212,7 +212,7 @@ LEFT_INNER_CLUSTER_MAPPING = u'''
 LEFT_INNER_CLUSTER_COMBOS = parse_combos(
 u'''
 
-    a  ■□    b  ■■    c  ■■    d  □□    e  □□    f  □□    g  ■□    h  □□
+    a  ■□    b  ■□    c  ■■    d  □□    e  □□    f  □□    g  ■□    h  □□
        □□       ■□       □□       ■□       ■□       ■■       ■□       □□
        □□       ■■       □□       □■       □□       □■       □■       ■□
 
