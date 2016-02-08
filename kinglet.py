@@ -115,7 +115,7 @@ def parse_combos(cluster, key_mapping):
 '''
 Use the following in VIM to make editing clusters easier:
 
-pyfile toggle_on_off.py
+pyfile vim_toggle_on_off.py
 nmap <buffer> <space> :python toggle_on_off()<CR>
 nnoremap <buffer> <RightMouse> <LeftMouse>:python toggle_on_off()<CR>
 '''
