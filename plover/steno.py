@@ -70,6 +70,12 @@ class Stroke(object):
         steno_keys_set = set(steno_keys)
         steno_keys = list(steno_keys_set)
 
+        if not steno_keys_set:
+            self.steno_keys = ()
+            self.rtfcre = ''
+            self.is_correction = False
+            return
+
         # Order the steno keys so comparisons can be made.
         steno_keys.sort(key=lambda x: system.KEY_ORDER.get(x, -1))
          
