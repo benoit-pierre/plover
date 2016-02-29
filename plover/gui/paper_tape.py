@@ -15,7 +15,8 @@ from plover import log
 TITLE = 'Plover: Stroke Display'
 ON_TOP_TEXT = "Always on top"
 UI_BORDER = 4
-MAX_STROKE_LINES = 30
+MAX_DISPLAY_LINES = 30
+MAX_STROKE_LINES = 1000
 MAX_STROKES_IN_LOG = 2000000
 STYLE_TEXT = 'Style:'
 STYLE_PAPER = 'Paper'
@@ -85,7 +86,7 @@ class StrokeDisplayDialog(wx.Dialog):
                                    style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP|wx.BORDER_NONE|wx.HSCROLL|wx.VSCROLL,
                                    # Will show MAX_STROKE_LINES lines.
                                    size=wx.Size(scroll_width + text_width,
-                                                scroll_height + text_height * MAX_STROKE_LINES))
+                                                scroll_height + text_height * MAX_DISPLAY_LINES))
         self.listbox.SetFont(fixed_font)
 
         sizer.Add(self.listbox,
