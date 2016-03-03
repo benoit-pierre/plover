@@ -174,7 +174,7 @@ class SerialConfigDialog(wx.Dialog):
                          border=GLOBAL_BORDER)
 
         self.ok_button = wx.Button(self, label=OK_STR)
-        cancel_button = wx.Button(self, label=CANCEL_STR)
+        cancel_button = wx.Button(self, id=wx.ID_CANCEL, label=CANCEL_STR)
         self.ok_button.SetDefault()
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.ok_button)
