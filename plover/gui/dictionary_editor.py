@@ -112,7 +112,7 @@ class DictionaryEditor(wx.Dialog):
 
         buttons_sizer.Add(save_button, flag=wx.ALL, border=self.BORDER)
 
-        cancel_button = wx.Button(self, label=CANCEL_BUTTON_NAME)
+        cancel_button = wx.Button(self, id=wx.ID_CANCEL, label=CANCEL_BUTTON_NAME)
         self.Bind(wx.EVT_BUTTON, self._cancel_close, cancel_button)
 
         buttons_sizer.Add(cancel_button, flag=wx.ALL, border=self.BORDER)
