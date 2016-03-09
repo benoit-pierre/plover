@@ -11,7 +11,7 @@ from cStringIO import StringIO
 
 from plover import log
 from plover.exception import InvalidConfigurationError
-from plover.machine.registry import machine_registry
+from plover.registry import registry
 from plover.oslayer.config import ASSETS_DIR, CONFIG_DIR
 from plover import system
 
@@ -232,7 +232,7 @@ class Config(object):
                 return p[1](v)
             except ValueError:
                 return p[0]
-        machine = machine_registry.get(machine_name)
+        machine = registry.get_machines()[machine_name].load()
         info = machine.get_option_info()
         defaults = {k: v[0] for k, v in info.items()}
         if self._config.has_section(machine_name):

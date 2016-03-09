@@ -23,7 +23,7 @@ import plover.formatting as formatting
 import plover.steno as steno
 import plover.translation as translation
 from plover.exception import InvalidConfigurationError,DictionaryLoaderException
-from plover.machine.registry import machine_registry, NoSuchMachineException
+from plover.registry import registry
 from plover import log
 from plover.dictionary.loading_manager import manager as dict_manager
 from plover import system
@@ -55,8 +55,8 @@ def update_engine(engine, config, reset_machine=False):
     """
     machine_type = config.get_machine_type()
     try:
-        machine_class = machine_registry.get(machine_type)
-    except NoSuchMachineException as e:
+        machine_class = registry.get_machines()[machine_type].load()
+    except Exception as e:
         raise InvalidConfigurationError(unicode(e))
     machine_options = config.get_machine_specific_options(machine_type)
     machine_mappings = config.get_system_keymap(machine_type)

@@ -18,7 +18,7 @@ import plover.gui.lookup
 import plover.gui.dictionary_editor
 from plover import log
 from plover.app import update_engine
-from plover.machine.registry import machine_registry
+from plover.registry import registry
 from plover.dictionary.loading_manager import manager as dict_manager
 from plover.gui.paper_tape import StrokeDisplayDialog
 from plover.gui.suggestions import SuggestionsDisplayDialog
@@ -208,11 +208,10 @@ class MachineConfig(wx.Panel):
         sizer.AddF(
             wx.StaticText(self, label=MACHINE_LABEL),
             sizer_flags.Left())
-        machines = machine_registry.get_all_names()
+        machines = registry.get_machines().keys()
         current_machine = self.config.get_machine_type()
         self.choice = wx.Choice(self, choices=sorted(machines))
-        selected_machine = machine_registry.resolve_alias(current_machine)
-        self.choice.SetStringSelection(selected_machine)
+        self.choice.SetStringSelection(current_machine)
         sizer.AddF(self.choice, sizer_flags.Expand())
         self.Bind(wx.EVT_CHOICE, self._update, self.choice)
 

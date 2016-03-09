@@ -35,11 +35,22 @@ class FakeConfig(object):
 
 class FakeRegistry(object):
 
-    def __init__(self, **kwargs):
-        self._machines = kwargs
+    class FakeLoader(object):
 
-    def get(self, name):
-        return self._machines[name]
+        def __init__(self, klass):
+            self._klass = klass
+
+        def load(self):
+            return self._klass
+
+    def __init__(self, **kwargs):
+        self._machines = {
+            k: self.FakeLoader(v)
+            for k, v in kwargs.items()
+        }
+
+    def get_machines(self):
+        return self._machines
 
 class FakeMachine(StenotypeBase):
 
@@ -58,7 +69,7 @@ class EngineTestCase(unittest.TestCase):
         self.state_transitions = []
         self.engine = app.StenoEngine()
         try:
-            with mock.patch('plover.app.machine_registry', self.reg):
+            with mock.patch('plover.app.registry', self.reg):
                 def callback(state):
                     self.state_transitions.append((state, self.engine.is_running))
                 self.engine.add_callback(callback)

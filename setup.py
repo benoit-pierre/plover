@@ -331,10 +331,23 @@ if __name__ == '__main__':
         install_requires=install_requires,
         extras_require=extras_require,
         tests_require=tests_require,
-        entry_points={
-            'console_scripts': ['plover=plover.main:main'],
-            'setuptools.installation': ['eggsecutable=plover.main:main'],
-        },
+        entry_points="""
+
+        [plover.machine]
+        Gemini PR = plover.machine.geminipr:Stenotype
+        Keyboard = plover.machine.keyboard:Stenotype
+        Passport = plover.machine.passport:Stenotype
+        Stentura = plover.machine.stentura:Stenotype
+        TX Bolt = plover.machine.txbolt:Stenotype
+        Treal = plover.machine.treal:Stenotype
+
+        [console_scripts]
+        plover = plover.main:main
+
+        [setuptools.installation]
+        eggsecutable = plover.main:main
+
+        """,
         packages=[
             'plover', 'plover.machine', 'plover.gui',
             'plover.oslayer', 'plover.dictionary',

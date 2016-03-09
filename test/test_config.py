@@ -12,7 +12,6 @@ from cStringIO import StringIO
 from mock import patch
 
 import plover.config as config
-from plover.machine.registry import Registry
 from plover.oslayer.config import CONFIG_DIR
 
 
@@ -151,9 +150,13 @@ class ConfigTestCase(unittest.TestCase):
         defaults = {k: v[0] for k, v in FakeMachine.get_option_info().items()}
 
         machine_name = 'machine foo'
+        class Registry(object):
+            def get_machines(self):
+                return { machine_name: self }
+            def load(self):
+                return FakeMachine
         registry = Registry()
-        registry.register(machine_name, FakeMachine)
-        with patch('plover.config.machine_registry', registry):
+        with patch('plover.config.registry', registry):
             c = config.Config()
             
             # Check default value.

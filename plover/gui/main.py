@@ -21,7 +21,7 @@ import plover.gui.add_translation
 import plover.gui.lookup
 from plover.oslayer.keyboardcontrol import KeyboardEmulation
 from plover.machine.base import STATE_ERROR, STATE_INITIALIZING, STATE_RUNNING
-from plover.machine.registry import machine_registry
+from plover.registry import registry
 from plover.gui.paper_tape import StrokeDisplayDialog
 from plover.gui.suggestions import SuggestionsDisplayDialog
 from plover import log
@@ -172,11 +172,7 @@ class MainFrame(wx.Frame):
 
         machine_sizer.AddF(self.spinner, center_flag)
         machine_sizer.AddF(self.connection_ctrl, center_flag)
-        longest_machine = max(machine_registry.get_all_names(), key=len)
-        longest_state = max((STATE_ERROR, STATE_INITIALIZING, STATE_RUNNING),
-                            key=len)
-        longest_machine_status = '%s: %s' % (longest_machine, longest_state)
-        self.machine_status_text = wx.StaticText(root, label=longest_machine_status)
+        self.machine_status_text = wx.StaticText(root)
         machine_sizer.AddF(self.machine_status_text, center_flag)
         refresh_bitmap = wx.Bitmap(self.REFRESH_IMAGE_FILE, wx.BITMAP_TYPE_PNG)          
         self.reconnect_button = wx.BitmapButton(root, bitmap=refresh_bitmap)
@@ -203,8 +199,6 @@ class MainFrame(wx.Frame):
         border = wx.BoxSizer()
         border.AddF(global_sizer,
                     wx.SizerFlags(1).Border(wx.ALL, self.BORDER).Expand())
-        root.SetSizerAndFit(border)
-        border.SetSizeHints(self)
 
         self.Bind(wx.EVT_CLOSE, self._quit)
         self.Bind(wx.EVT_MOVE, self.on_move)
@@ -217,6 +211,17 @@ class MainFrame(wx.Frame):
             log.error('loading configuration failed, reseting to default', exc_info=True)
             self.config.clear()
         copy_default_dictionaries(self.config)
+
+        registry.load_plugins()
+        registry.update()
+
+        longest_machine = max(registry.get_machines().keys(), key=len)
+        longest_state = max((STATE_ERROR, STATE_INITIALIZING, STATE_RUNNING),
+                            key=len)
+        longest_status = '%s: %s' % (longest_machine, longest_state)
+        self.machine_status_text.SetLabel(longest_status)
+        root.SetSizerAndFit(border)
+        border.SetSizeHints(self)
 
         rect = wx.Rect(config.get_main_frame_x(), config.get_main_frame_y(), *self.GetSize())
         self.SetRect(AdjustRectToScreen(rect))
@@ -291,8 +296,7 @@ class MainFrame(wx.Frame):
 
     def _update_status(self, state):
         if state:
-            machine_name = machine_registry.resolve_alias(
-                self.config.get_machine_type())
+            machine_name = self.config.get_machine_type()
             self.machine_status_text.SetLabel('%s: %s' % (machine_name, state))
             self.spinner.Show(state == STATE_INITIALIZING)
             self.connection_ctrl.Show(state != STATE_INITIALIZING)
