@@ -232,6 +232,12 @@ class MainFrame(wx.Frame):
         self.steno_engine.set_output(
             Output(self.consume_command, self.steno_engine))
 
+        try:
+            app.init_engine(self.steno_engine, self.config)
+        except Exception:
+            log.error('engine initialization failed', exc_info=True)
+            self._show_config_dialog()
+
         self.steno_engine.add_stroke_listener(
             StrokeDisplayDialog.stroke_handler)
         if self.config.get_show_stroke_display():
@@ -241,12 +247,6 @@ class MainFrame(wx.Frame):
             SuggestionsDisplayDialog.stroke_handler)
         if self.config.get_show_suggestions_display():
             SuggestionsDisplayDialog.display(self, self.config, self.steno_engine)
-
-        try:
-            app.init_engine(self.steno_engine, self.config)
-        except Exception:
-            log.error('engine initialization failed', exc_info=True)
-            self._show_config_dialog()
 
     def _reconnect(self):
         try:

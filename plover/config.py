@@ -128,7 +128,10 @@ DEFAULT_KEYBOARD_CONFIG_FRAME_X = -1
 KEYBOARD_CONFIG_FRAME_Y_OPTION = 'y'
 DEFAULT_KEYBOARD_CONFIG_FRAME_Y = -1
 
+BASE_SYSTEM_SECTION = 'System'
+SYSTEM_NAME_OPTION = 'name'
 DEFAULT_SYSTEM = 'English Stenotype'
+
 SYSTEM_CONFIG_SECTION = 'System: %s'
 SYSTEM_KEYMAP_OPTION = 'keymap[%s]'
 
@@ -547,13 +550,21 @@ class Config(object):
                              KEYBOARD_CONFIG_FRAME_Y_OPTION,
                              DEFAULT_KEYBOARD_CONFIG_FRAME_Y)
 
+    def set_system_name(self, system):
+        self._set(BASE_SYSTEM_SECTION, SYSTEM_NAME_OPTION, system)
+
+    def get_system_name(self):
+        return self._get(BASE_SYSTEM_SECTION,
+                         SYSTEM_NAME_OPTION,
+                         DEFAULT_SYSTEM)
+
     def set_system_keymap(self, machine_type, mappings):
-        section = SYSTEM_CONFIG_SECTION % DEFAULT_SYSTEM
+        section = SYSTEM_CONFIG_SECTION % self.get_system_name()
         option = SYSTEM_KEYMAP_OPTION % machine_type
         self._set(section, option, mappings)
 
     def get_system_keymap(self, machine_type):
-        section = SYSTEM_CONFIG_SECTION % DEFAULT_SYSTEM
+        section = SYSTEM_CONFIG_SECTION % self.get_system_name()
         option = SYSTEM_KEYMAP_OPTION % machine_type
         return self._get(section, option, system.KEYMAPS.get(machine_type))
 

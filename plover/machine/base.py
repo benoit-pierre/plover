@@ -25,15 +25,9 @@ class StenotypeBase(object):
 
     # Layout of physical keys.
     KEYS_LAYOUT = ''
-    # And possible actions to map to.
-    ACTIONS = (
-        tuple(sorted(system.KEY_ORDER.keys(),
-                     key=lambda k: system.KEY_ORDER[k]))
-        + ('no-op',)
-    )
 
     def __init__(self):
-        self.keymap = Keymap(self.KEYS_LAYOUT.split(), self.ACTIONS)
+        self.keymap = Keymap(self.KEYS_LAYOUT.split(), self.get_actions())
         self.stroke_subscribers = []
         self.state_subscribers = []
         self.state = STATE_STOPPED
@@ -118,6 +112,14 @@ class StenotypeBase(object):
             
     def _error(self):
         self._set_state(STATE_ERROR)
+
+    @classmethod
+    def get_actions(cls):
+        """List of supported actions to map to."""
+        actions = tuple(sorted(system.KEY_ORDER.keys(),
+                               key=lambda k: system.KEY_ORDER[k]))
+        actions += ('no-op',)
+        return actions
 
     @classmethod
     def get_option_info(cls):

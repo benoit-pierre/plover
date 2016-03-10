@@ -18,7 +18,6 @@ class Stenotype(StenotypeBase):
     """
 
     KEYS_LAYOUT = KeyboardCapture.SUPPORTED_KEYS_LAYOUT
-    ACTIONS = StenotypeBase.ACTIONS + ('arpeggiate',)
 
     def __init__(self, params):
         """Monitor the keyboard's events."""
@@ -109,6 +108,12 @@ class Stenotype(StenotypeBase):
                 self._released_keys.clear()
                 self._notify(steno_keys)
             self._last_stroke_key_down_count = 0
+
+    @classmethod
+    def get_actions(cls):
+        actions = super(Stenotype, cls).get_actions()
+        actions += ('arpeggiate',)
+        return actions
 
     @classmethod
     def get_option_info(cls):

@@ -2,10 +2,11 @@
 # See LICENSE.txt for details.
 
 from plover.orthography import add_suffix
-import unittest
+
+from . import PloverTest
 
 
-class OrthographyTestCase(unittest.TestCase):
+class OrthographyTestCase(PloverTest):
 
     def test_add_suffix(self):
         cases = (

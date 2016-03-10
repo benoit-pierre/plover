@@ -3,12 +3,12 @@
 
 """Unit tests for steno.py."""
 
-import unittest
-
 from plover.steno import normalize_steno, Stroke
 
+from . import PloverTest
 
-class StenoTestCase(unittest.TestCase):
+
+class StenoTestCase(PloverTest):
     def test_normalize_steno(self):
         cases = (
         

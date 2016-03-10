@@ -14,6 +14,7 @@ PLUGINS_DIR = os.path.join(CONFIG_DIR, 'plugins')
 class Registry(object):
 
     def __init__(self):
+        self._systems = {}
         self._machines = {}
 
     def load_plugins(self, plugins_dir=PLUGINS_DIR):
@@ -27,6 +28,7 @@ class Registry(object):
 
     def update(self):
         for plugin_dict, plugin_type in (
+            (self._systems, 'system'),
             (self._machines, 'machine'),
         ):
             entrypoint_type = 'plover.%s' % plugin_type
@@ -42,6 +44,9 @@ class Registry(object):
                          plugin_type, entrypoint.name,
                          entrypoint.module_name)
                 plugin_dict[entrypoint.name] = entrypoint
+
+    def get_systems(self):
+        return self._systems
 
     def get_machines(self):
         return self._machines

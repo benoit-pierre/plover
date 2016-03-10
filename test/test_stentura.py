@@ -6,9 +6,10 @@
 import array
 import struct
 import threading
-import unittest
 
 from plover.machine import stentura
+
+from . import PloverTest
 
 
 def make_response(seq, action, error=0, p1=0, p2=0, data=None,
@@ -89,7 +90,7 @@ class MockPacketPort(object):
         return data
 
 
-class TestCase(unittest.TestCase):
+class TestCase(PloverTest):
     def test_crc(self):
         data = [ord(x) for x in '123456789']
         self.assertEqual(stentura._crc(data), 0xBB3D)

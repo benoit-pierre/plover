@@ -146,7 +146,8 @@ class KeyboardConfigDialog(wx.Dialog):
         sizer.AddF(self.arpeggiate_option, sizer_flags)
 
         # editable list for keymap bindings
-        self.keymap = Keymap(KeyboardMachine.KEYS_LAYOUT.split(), KeyboardMachine.ACTIONS)
+        self.keymap = Keymap(KeyboardMachine.KEYS_LAYOUT.split(),
+                             KeyboardMachine.get_actions())
         mappings = config.get_system_keymap('Keyboard')
         if mappings is not None:
             self.keymap.set_mappings(mappings)

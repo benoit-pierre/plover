@@ -3,9 +3,9 @@
 
 """Unit tests for formatting.py."""
 
-import unittest
-
 from plover import formatting
+
+from . import PloverTest
 
 
 # Add tests with partial output specified.
@@ -41,7 +41,7 @@ class MockTranslation(object):
 def translation(**kwargs):
     return MockTranslation(**kwargs)
 
-class FormatterTestCase(unittest.TestCase):
+class FormatterTestCase(PloverTest):
 
     longMessage = True
     maxDiff = None

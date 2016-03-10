@@ -333,6 +333,9 @@ if __name__ == '__main__':
         tests_require=tests_require,
         entry_points="""
 
+        [plover.system]
+        English Stenotype = plover.system.english_stenotype
+
         [plover.machine]
         Gemini PR = plover.machine.geminipr:Stenotype
         Keyboard = plover.machine.keyboard:Stenotype

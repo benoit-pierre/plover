@@ -40,6 +40,12 @@ class SimpleNamespace(object):
 
 def init_engine(engine, config):
     """Initialize a StenoEngine from a config object."""
+    system_name = config.get_system_name()
+    try:
+        system.setup(system_name)
+    except Exception as e:
+        raise InvalidConfigurationError('could not set "%s" system: %s'
+                                        % (system_name, unicode(e)))
     engine.set_is_running(config.get_auto_start())
     update_engine(engine, config)
 

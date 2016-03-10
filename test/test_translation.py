@@ -15,6 +15,8 @@ from plover.translation import Translation, Translator, _State
 from plover.translation import escape_translation, unescape_translation
 from plover.steno import Stroke, normalize_steno
 
+from . import PloverTest
+
 
 def stroke(s):
     keys = []
@@ -42,7 +44,7 @@ def _back_string():
             _back_string.mapping = '{#Control_L(BackSpace)}{^}'
     return _back_string.mapping
 
-class TranslationTestCase(unittest.TestCase):
+class TranslationTestCase(PloverTest):
     def test_no_translation(self):
         t = Translation([stroke('S'), stroke('T')], None)
         self.assertEqual(t.strokes, [stroke('S'), stroke('T')])
@@ -55,7 +57,7 @@ class TranslationTestCase(unittest.TestCase):
         self.assertEqual(t.rtfcre, ('S', 'T'))
         self.assertEqual(t.english, 'translation')
 
-class TranslatorStateSizeTestCase(unittest.TestCase):
+class TranslatorStateSizeTestCase(PloverTest):
     class FakeState(_State):
         def __init__(self):
             _State.__init__(self)
@@ -115,7 +117,7 @@ class TranslatorStateSizeTestCase(unittest.TestCase):
         self.t.translate(stroke('S'))
         self.assert_size_call(0)
 
-class TranslatorTestCase(unittest.TestCase):
+class TranslatorTestCase(PloverTest):
 
     def test_listeners(self):
         output1 = []
@@ -333,7 +335,7 @@ class TranslatorTestCase(unittest.TestCase):
         t.translate(stroke('S'))
         self.assertEqual(out.get(), '')
 
-class StateTestCase(unittest.TestCase):
+class StateTestCase(PloverTest):
     
     def setUp(self):
         self.a = Translation([stroke('S')], None)
@@ -420,7 +422,7 @@ class StateTestCase(unittest.TestCase):
         self.assertEquals(s.translations, [self.b, self.c])
         self.assertEqual(s.tail, self.a)
 
-class TranslateStrokeTestCase(unittest.TestCase):
+class TranslateStrokeTestCase(PloverTest):
 
     class CaptureOutput(object):
         output = namedtuple('output', 'undo do prev')

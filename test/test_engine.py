@@ -1,7 +1,6 @@
 
 import os
 import json
-import unittest
 from contextlib import contextmanager
 from functools import partial
 
@@ -10,6 +9,9 @@ import mock
 from plover import app
 from plover.machine.base import StenotypeBase
 from plover import system
+from plover.config import DEFAULT_SYSTEM
+
+from . import PloverTest
 
 
 class FakeConfig(object):
@@ -19,6 +21,7 @@ class FakeConfig(object):
             ('auto_start'                , False                                ),
             ('machine_type'              , 'Fake'                               ),
             ('machine_specific_options'  , {}                                   ),
+            ('system_name'               , DEFAULT_SYSTEM                       ),
             ('system_keymap'             , json.dumps([(k, k) for k in
                                                        system.KEY_ORDER.keys()])),
             ('dictionary_file_names'     , []                                   ),
@@ -54,13 +57,14 @@ class FakeRegistry(object):
 
 class FakeMachine(StenotypeBase):
 
-    KEYS_LAYOUT = ' '.join(system.KEY_ORDER.keys())
+    KEYS_LAYOUT = ''
 
     def __init__(self, options):
+        self.KEYS_LAYOUT = ' '.join(system.KEY_ORDER.keys())
         super(FakeMachine, self).__init__()
         self._options = options
 
-class EngineTestCase(unittest.TestCase):
+class EngineTestCase(PloverTest):
 
     @contextmanager
     def _setup(self, **kwargs):

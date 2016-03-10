@@ -6,12 +6,13 @@
 from operator import eq
 from itertools import starmap
 import time
-import unittest
 
 from mock import patch
 
 from plover.machine.passport import Stenotype
 from plover import system
+
+from . import PloverTest
 
 
 class MockSerial(object):
@@ -46,7 +47,7 @@ class MockSerial(object):
 def cmp_keys(a, b):
     return all(starmap(eq, zip(a, b)))
 
-class TestCase(unittest.TestCase):
+class TestCase(PloverTest):
     def test_passport(self):
         
         def p(s):

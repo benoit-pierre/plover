@@ -5,10 +5,11 @@
 """Unit tests for json.py."""
 
 import StringIO
-import unittest
 
 from plover.dictionary.json_dict import load_dictionary
 from plover.dictionary.base import DictionaryLoaderException
+
+from . import PloverTest
 
 
 def make_dict(contents):
@@ -16,7 +17,7 @@ def make_dict(contents):
     d.name = "'%s'" % contents
     return d
 
-class JsonDictionaryTestCase(unittest.TestCase):
+class JsonDictionaryTestCase(PloverTest):
 
     def test_load_dictionary(self):
         def assertEqual(a, b):
