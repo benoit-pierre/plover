@@ -3,15 +3,18 @@
 
 """Configuration management."""
 
+import shutil
 import ConfigParser
 from ConfigParser import RawConfigParser
 import os
 from cStringIO import StringIO
+
 from plover import log
 from plover.exception import InvalidConfigurationError
 from plover.machine.registry import machine_registry
 from plover.oslayer.config import ASSETS_DIR, CONFIG_DIR
 from plover import system
+
 
 SPINNER_FILE = os.path.join(ASSETS_DIR, 'spinner.gif')
 
@@ -586,3 +589,22 @@ def _dict_entry_key(s):
         return int(s[len(DICTIONARY_FILE_OPTION):])
     except ValueError:
         return -1
+
+
+def copy_default_dictionaries(config):
+    '''Copy default dictionaries to the configuration directory.
+
+    Each default dictionary is copied to the configuration directory
+    if it's in use by the current config and missing.
+    '''
+
+    config_dictionaries = set(os.path.basename(dictionary) for dictionary
+                              in config.get_dictionary_file_names())
+    for dictionary in config_dictionaries & set(DEFAULT_DICTIONARIES):
+        dst = os.path.join(CONFIG_DIR, dictionary)
+        if os.path.exists(dst):
+            continue
+        src = os.path.join(ASSETS_DIR, dictionary)
+        log.info('copying %s to %s', src, dst)
+        shutil.copy(src, dst)
+
