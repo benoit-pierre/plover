@@ -66,6 +66,11 @@ def update_engine(engine, config, reset_machine=False):
         raise InvalidConfigurationError(unicode(e))
     machine_options = config.get_machine_specific_options(machine_type)
     machine_mappings = config.get_system_keymap(machine_type)
+    if machine_mappings is None and machine_class.KEYMAP_MACHINE_TYPE is not None:
+        machine_mappings = config.get_system_keymap(machine_class.KEYMAP_MACHINE_TYPE)
+    if machine_mappings is None:
+        log.warning('no mappings for %s using %s system',
+                    machine_type, config.get_system_name())
     engine.set_machine(machine_class, machine_options, machine_mappings,
                        reset_machine=reset_machine)
 
