@@ -75,7 +75,7 @@ ORTHOGRAPHY_RULES_ALIASES = {
     'able': 'ible',
 }
 
-ORTHOGRAPHY_WORDLIST = 'american_english_words.txt'
+ORTHOGRAPHY_WORDLIST = 'asset:wordlist:American English Words.txt'
 
 KEYMAPS = {
     'Gemini PR': {

@@ -80,7 +80,7 @@ class PyInstallerDist(setuptools.Command):
 class BinaryDistWin(PyInstallerDist):
     description = 'create an executabe for MS Windows'
     extra_args = [
-        '--icon=plover/assets/plover.ico',
+        '--icon=plover/assets/pixmaps/plover.ico',
     ]
 
 
@@ -333,6 +333,10 @@ if __name__ == '__main__':
         tests_require=tests_require,
         entry_points="""
 
+        [plover.asset]
+        dictionaries = plover.assets:DICTIONARIES
+        wordlists = plover.assets:WORDLISTS
+
         [plover.system]
         English Stenotype = plover.system.english_stenotype
 
@@ -352,16 +356,24 @@ if __name__ == '__main__':
 
         """,
         packages=[
-            'plover', 'plover.machine', 'plover.gui',
-            'plover.oslayer', 'plover.dictionary',
+            'plover',
+            'plover.assets',
+            'plover.dictionary',
+            'plover.gui',
+            'plover.machine',
+            'plover.oslayer',
             'plover.system',
         ],
         package_data={
-            'plover': ['assets/*'],
+            'plover': [
+                'assets/dictionaries/*',
+                'assets/wordlists/*',
+                'assets/pixmaps/*',
+            ],
         },
         data_files=[
             ('share/applications', ['application/Plover.desktop']),
-            ('share/pixmaps', ['plover/assets/plover.png']),
+            ('share/pixmaps', ['plover/assets/pixmaps/plover.png']),
         ],
         classifiers=[
             'Programming Language :: Python :: 2.7',

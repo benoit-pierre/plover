@@ -17,6 +17,7 @@ import inspect
 import re
 from plover.steno import normalize_steno
 from plover.steno_dictionary import StenoDictionary
+from plover import resource
 # TODO: Move dictionary format somewhere more caninical than formatting.
 from plover.formatting import META_RE
 
@@ -284,7 +285,7 @@ def load_stylesheet(s):
 
 def load_dictionary(filename):
     """Load an RTF/CRE dictionary."""
-    with open(filename, 'rb') as fp:
+    with resource.resource_stream(filename) as fp:
         s = fp.read()
     styles = load_stylesheet(s)
     d = {}

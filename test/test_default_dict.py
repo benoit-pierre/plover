@@ -8,7 +8,7 @@ import unittest
 DICT_NAMES = ['main.json',
               'commands.json',
               'user.json']
-DICT_PATH = 'plover/assets/'
+DICT_PATH = 'plover/assets/dictionaries/'
 
 
 def read_key_pairs(pairs):

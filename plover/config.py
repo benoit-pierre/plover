@@ -3,6 +3,7 @@
 
 """Configuration management."""
 
+import pkg_resources
 import shutil
 import ConfigParser
 from ConfigParser import RawConfigParser
@@ -11,12 +12,12 @@ from cStringIO import StringIO
 
 from plover import log
 from plover.exception import InvalidConfigurationError
-from plover.registry import registry
-from plover.oslayer.config import ASSETS_DIR, CONFIG_DIR
+from plover.registry import registry, ASSET_SCHEME
+from plover.oslayer.config import CONFIG_DIR, PIXMAPS_DIR
 from plover import system
 
 
-SPINNER_FILE = os.path.join(ASSETS_DIR, 'spinner.gif')
+SPINNER_FILE = os.path.join(PIXMAPS_DIR, 'spinner.gif')
 
 # Config path.
 CONFIG_FILE = os.path.join(CONFIG_DIR, 'plover.cfg')
@@ -174,6 +175,8 @@ class Config(object):
 
             Note: relative path are automatically assumed to be relative to CONFIG_DIR.
         '''
+        if path.startswith(ASSET_SCHEME):
+            return path
         path = os.path.realpath(os.path.join(CONFIG_DIR, path))
         config_dir = os.path.realpath(CONFIG_DIR)
         if not config_dir.endswith(os.sep):
@@ -190,6 +193,8 @@ class Config(object):
             If value is an absolute path, it is returned as is
             otherwise, an absolute path relative to CONFIG_DIR is returned.
         '''
+        if value.startswith(ASSET_SCHEME):
+            return value
         path = os.path.realpath(os.path.join(CONFIG_DIR, value))
         return path
 
@@ -615,7 +620,8 @@ def copy_default_dictionaries(config):
         dst = os.path.join(CONFIG_DIR, dictionary)
         if os.path.exists(dst):
             continue
-        src = os.path.join(ASSETS_DIR, dictionary)
-        log.info('copying %s to %s', src, dst)
-        shutil.copy(src, dst)
+        src = pkg_resources.resource_stream('plover', 'assets/dictionaries/%s' % dictionary)
+        log.info('recreating %s', dst)
+        with open(dst, 'wb') as fp:
+            shutil.copyfileobj(src, fp)
 

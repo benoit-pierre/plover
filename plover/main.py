@@ -21,7 +21,7 @@ from collections import OrderedDict
 
 import plover.gui.main
 import plover.oslayer.processlock
-from plover.oslayer.config import CONFIG_DIR, ASSETS_DIR
+from plover.oslayer.config import CONFIG_DIR
 from plover.config import CONFIG_FILE, DEFAULT_DICTIONARIES, Config
 from plover import log
 from plover import __name__ as __software_name__

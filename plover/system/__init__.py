@@ -1,6 +1,6 @@
 
-from plover.oslayer.config import CONFIG_DIR, ASSETS_DIR
 from plover.registry import registry
+from plover import resource
 from plover import log
 
 from io import open
@@ -11,14 +11,8 @@ import re
 def _load_wordlist(filename):
     if filename is None:
         return {}
-    path = None
-    for dir in (CONFIG_DIR, ASSETS_DIR):
-        path = os.path.realpath(os.path.join(dir, filename))
-        if os.path.exists(path):
-            break
-    words = {}
-    with open(path, encoding='utf-8') as f:
-        pairs = [word.strip().rsplit(' ', 1) for word in f]
+    with resource.resource_stream(filename, encoding='utf-8') as fp:
+        pairs = [word.strip().rsplit(' ', 1) for word in fp]
         pairs.sort(reverse=True, key=lambda x: int(x[1]))
         words = {p[0].lower(): int(p[1]) for p in pairs}
     return words

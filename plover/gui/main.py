@@ -15,7 +15,7 @@ import wx
 import wx.animate
 from wx.lib.utils import AdjustRectToScreen
 import plover.app as app
-from plover.config import ASSETS_DIR, SPINNER_FILE, copy_default_dictionaries
+from plover.config import PIXMAPS_DIR, SPINNER_FILE, copy_default_dictionaries
 from plover.gui.config import ConfigurationDialog
 import plover.gui.add_translation
 import plover.gui.lookup
@@ -70,10 +70,10 @@ class MainFrame(wx.Frame):
     # Class constants.
     TITLE = __software_name__.capitalize()
     ALERT_DIALOG_TITLE = TITLE
-    CONNECTED_IMAGE_FILE = os.path.join(ASSETS_DIR, 'connected.png')
-    DISCONNECTED_IMAGE_FILE = os.path.join(ASSETS_DIR, 'disconnected.png')
-    REFRESH_IMAGE_FILE = os.path.join(ASSETS_DIR, 'refresh.png')
-    PLOVER_ICON_FILE = os.path.join(ASSETS_DIR, 'plover.ico')
+    CONNECTED_IMAGE_FILE = os.path.join(PIXMAPS_DIR, 'connected.png')
+    DISCONNECTED_IMAGE_FILE = os.path.join(PIXMAPS_DIR, 'disconnected.png')
+    REFRESH_IMAGE_FILE = os.path.join(PIXMAPS_DIR, 'refresh.png')
+    PLOVER_ICON_FILE = os.path.join(PIXMAPS_DIR, 'plover.ico')
     BORDER = 5
     STATUS_DISCONNECTED, STATUS_OUTPUT_DISABLED, STATUS_OUTPUT_ENABLED = range(-1, 2)
     ENABLE_OUTPUT_LABEL = "Enable"

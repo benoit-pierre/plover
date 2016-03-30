@@ -15,6 +15,8 @@ import plover.dictionary.json_dict as json_dict
 import plover.dictionary.rtfcre_dict as rtfcre_dict
 from plover.config import JSON_EXTENSION, RTF_EXTENSION
 from plover.exception import DictionaryLoaderException
+from plover.registry import ASSET_SCHEME
+
 
 dictionaries = {
     JSON_EXTENSION.lower(): json_dict,
@@ -37,7 +39,10 @@ def load_dictionary(filename):
     except Exception as e:
         raise DictionaryLoaderException('loading \'%s\' failed: %s' % (filename, str(e)))
     d.set_path(filename)
-    d.save = ThreadedSaver(d, filename, dict_type.save_dictionary)
+    if filename.startswith(ASSET_SCHEME):
+        d.save = None
+    else:
+        d.save = ThreadedSaver(d, filename, dict_type.save_dictionary)
     return d
 
 def save_dictionary(d, filename, saver):

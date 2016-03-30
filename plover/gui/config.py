@@ -53,9 +53,9 @@ TRANSLATION_OPACITY_LABEL = "Translation Dialog Opacity"
 
 UI_BORDER = 4
 COMPONENT_SPACE = 3
-UP_IMAGE_FILE = os.path.join(conf.ASSETS_DIR, 'up.png')
-DOWN_IMAGE_FILE = os.path.join(conf.ASSETS_DIR, 'down.png')
-REMOVE_IMAGE_FILE = os.path.join(conf.ASSETS_DIR, 'remove.png')
+UP_IMAGE_FILE = os.path.join(conf.PIXMAPS_DIR, 'up.png')
+DOWN_IMAGE_FILE = os.path.join(conf.PIXMAPS_DIR, 'down.png')
+REMOVE_IMAGE_FILE = os.path.join(conf.PIXMAPS_DIR, 'remove.png')
 TITLE = "Plover Configuration"
 
 

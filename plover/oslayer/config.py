@@ -20,7 +20,7 @@ else:
     PROGRAM_DIR = os.getcwd()
 
 pkg_resources.require('plover')[0]
-ASSETS_DIR = pkg_resources.resource_filename('plover', 'assets')
+PIXMAPS_DIR = pkg_resources.resource_filename('plover', 'assets/pixmaps')
 
 # If the program's directory has a plover.cfg file then run in "portable mode",
 # i.e. store all data in the same directory. This allows keeping all Plover
