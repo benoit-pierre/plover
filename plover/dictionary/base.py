@@ -39,7 +39,7 @@ def load_dictionary(filename):
     except Exception as e:
         raise DictionaryLoaderException('loading \'%s\' failed: %s' % (filename, str(e)))
     d.set_path(filename)
-    if filename.startswith(ASSET_SCHEME):
+    if dict_type.save_dictionary is None or filename.startswith(ASSET_SCHEME):
         d.save = None
     else:
         d.save = ThreadedSaver(d, filename, dict_type.save_dictionary)

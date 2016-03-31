@@ -50,9 +50,12 @@ class StenoDictionaryTestCase(unittest.TestCase):
     def test_dictionary_collection(self):
         dc = StenoDictionaryCollection()
         d1 = StenoDictionary()
+        d1._path = 'd1'
+        d1.save = lambda: None
         d1[('S',)] = 'a'
         d1[('T',)] = 'b'
         d2 = StenoDictionary()
+        d2._path = 'd2'
         d2[('S',)] = 'c'
         d2[('W',)] = 'd'
         dc.set_dicts([d1, d2])
@@ -74,6 +77,13 @@ class StenoDictionaryTestCase(unittest.TestCase):
         
         self.assertEqual(dc.reverse_lookup('c'), [('S',)])
         
+        # Check entry is added to first writable
+        # dictionary (in order of precedence).
+        dc.set(('A',), 'a')
+        self.assertEqual(dc.lookup(('A',)), 'a')
+        self.assertEqual(d1[('A',)], 'a')
+        self.assertTrue(('A',) not in d2)
         dc.set(('S',), 'e')
-        self.assertEqual(dc.lookup(('S',)), 'e')
-        self.assertEqual(d2[('S',)], 'e')
+        self.assertEqual(dc.lookup(('S',)), 'c')
+        self.assertEqual(d1[('S',)], 'e')
+        self.assertEqual(d2[('S',)], 'c')

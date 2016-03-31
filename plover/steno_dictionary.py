@@ -9,6 +9,9 @@ A steno dictionary maps sequences of steno strokes to translations.
 
 import collections
 
+from plover import log
+
+
 class StenoDictionary(collections.MutableMapping):
     """A steno dictionary.
 
@@ -145,8 +148,17 @@ class StenoDictionaryCollection(object):
                 return key
 
     def set(self, key, value):
-        if self.dicts:
-            self.dicts[0][key] = value
+        for dictionary in self.dicts:
+            if dictionary.save is not None:
+                break
+        else:
+            log.error('no writable dictionary to add translation: "%s": "%s"',
+                      '/'.join(key), value)
+            return None
+        log.info('adding translation to \'%s\': "%s": "%s"',
+                  dictionary.get_path(), '/'.join(key), value)
+        dictionary[key] = value
+        return dictionary
 
     def save(self, path_list=None):
         '''Save the dictionaries in <path_list>.
