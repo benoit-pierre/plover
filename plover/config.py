@@ -136,10 +136,6 @@ DEFAULT_SYSTEM = 'English Stenotype'
 SYSTEM_CONFIG_SECTION = 'System: %s'
 SYSTEM_KEYMAP_OPTION = 'keymap[%s]'
 
-# Dictionary constants.
-JSON_EXTENSION = '.json'
-RTF_EXTENSION = '.rtf'
-
 # Logging constants.
 LOG_EXTENSION = '.log'
 

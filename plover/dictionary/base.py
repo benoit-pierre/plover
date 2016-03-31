@@ -11,28 +11,21 @@ from os.path import splitext
 import shutil
 import threading
 
-import plover.dictionary.json_dict as json_dict
-import plover.dictionary.rtfcre_dict as rtfcre_dict
-from plover.config import JSON_EXTENSION, RTF_EXTENSION
 from plover.exception import DictionaryLoaderException
-from plover.registry import ASSET_SCHEME
+from plover.registry import registry, ASSET_SCHEME
 
-
-dictionaries = {
-    JSON_EXTENSION.lower(): json_dict,
-    RTF_EXTENSION.lower(): rtfcre_dict,
-}
 
 def load_dictionary(filename):
     """Load a dictionary from a file."""
     extension = splitext(filename)[1].lower()
+    dictionaries = registry.get_dictionaries()
 
     try:
-        dict_type = dictionaries[extension]
+        dict_type = dictionaries[extension[1:]].load()
     except KeyError:
         raise DictionaryLoaderException(
             'Unsupported extension for dictionary: %s. Supported extensions: %s' %
-            (extension, ', '.join(dictionaries.keys())))
+            (extension, ', '.join(sorted(dictionaries.keys()))))
 
     try:
         d = dict_type.load_dictionary(filename)

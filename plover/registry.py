@@ -18,6 +18,7 @@ class Registry(object):
         self._assets = {}
         self._systems = {}
         self._machines = {}
+        self._dictionaries = {}
 
     def load_plugins(self, plugins_dir=PLUGINS_DIR):
         log.info('loading plugins from %s', plugins_dir)
@@ -53,6 +54,7 @@ class Registry(object):
         for plugin_dict, plugin_type in (
             (self._systems, 'system'),
             (self._machines, 'machine'),
+            (self._dictionaries, 'dictionary'),
         ):
             entrypoint_type = 'plover.%s' % plugin_type
             for entrypoint in pkg_resources.iter_entry_points(entrypoint_type):
@@ -76,6 +78,9 @@ class Registry(object):
 
     def get_machines(self):
         return self._machines
+
+    def get_dictionaries(self):
+        return self._dictionaries
 
 
 registry = Registry()

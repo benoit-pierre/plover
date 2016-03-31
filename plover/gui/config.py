@@ -317,9 +317,9 @@ class DictionaryConfig(ScrolledPanel):
 
         main_sizer.Add(self.dicts_sizer)
 
-        self.mask = 'Json files (*%s)|*%s|RTF/CRE files (*%s)|*%s' % (
-            conf.JSON_EXTENSION, conf.JSON_EXTENSION,
-            conf.RTF_EXTENSION, conf.RTF_EXTENSION,
+        self.mask = '|'.join(
+            '%s files|*.%s' % (ext, ext)
+            for ext in registry.get_dictionaries()
         )
 
         self.SetSizerAndFit(main_sizer)

@@ -337,6 +337,10 @@ if __name__ == '__main__':
         dictionaries = plover.assets:DICTIONARIES
         wordlists = plover.assets:WORDLISTS
 
+        [plover.dictionary]
+        json = plover.dictionary.json_dict
+        rtf = plover.dictionary.rtfcre_dict
+
         [plover.system]
         English Stenotype = plover.system.english_stenotype
 
