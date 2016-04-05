@@ -9,6 +9,7 @@
 
 from os.path import splitext
 import shutil
+import sys
 import threading
 
 from plover.exception import DictionaryLoaderException
@@ -30,7 +31,8 @@ def load_dictionary(filename):
     try:
         d = dict_type.load_dictionary(filename)
     except Exception as e:
-        raise DictionaryLoaderException('loading \'%s\' failed: %s' % (filename, str(e)))
+        ne = DictionaryLoaderException('loading \'%s\' failed: %s' % (filename, str(e)))
+        raise type(ne), ne, sys.exc_info()[2]
     d.set_path(filename)
     if dict_type.save_dictionary is None or filename.startswith(ASSET_SCHEME):
         d.save = None
