@@ -93,15 +93,8 @@ class Stroke(object):
 
         self.steno_keys = steno_keys
 
-        # Determine if this stroke is a correction stroke.
-        self.is_correction = (self.rtfcre == system.UNDO_STROKE_STENO)
-
     def __str__(self):
-        if self.is_correction:
-            prefix = '*'
-        else:
-            prefix = ''
-        return '%sStroke(%s : %s)' % (prefix, self.rtfcre, self.steno_keys)
+        return 'Stroke(%s : %s)' % (self.rtfcre, self.steno_keys)
 
     def __eq__(self, other):
         return (isinstance(other, Stroke)

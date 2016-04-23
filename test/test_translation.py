@@ -234,6 +234,7 @@ class TranslatorTestCase(PloverTest):
                 del self._output[:]
                 
         d = StenoDictionary()        
+        d[('*',)] = u'{-}'
         out = Output()        
         t = Translator()
         dc = StenoDictionaryCollection()
@@ -317,6 +318,7 @@ class TranslatorTestCase(PloverTest):
         self.assertEqual(out.get(), '')
         
         d.clear()
+        d[('*',)] = u'{-}'
 
         s = stroke('S')
         t.translate(s)
@@ -534,17 +536,20 @@ class TranslateStrokeTestCase(PloverTest):
         self.assertEqual(self.o.output.do[0].replaced, self.lt('S/T'))
 
     def test_undo(self):
+        self.define('*', '{-}')
         self.s.translations = self.lt('POP')
         self.translate(stroke('*'))
         self.assertTranslations([])
         self.assertOutput(self.lt('POP'), [], None)
 
     def test_empty_undo(self):
+        self.define('*', '{-}')
         self.translate(stroke('*'))
         self.assertTranslations([])
         self.assertOutput([], [Translation([Stroke('*')], _back_string())], None)
 
     def test_undo_translation(self):
+        self.define('*', '{-}')
         self.define('P/P', 'pop')
         self.translate(stroke('P'))
         self.translate(stroke('P'))
@@ -553,6 +558,7 @@ class TranslateStrokeTestCase(PloverTest):
         self.assertOutput(self.lt('P/P'), self.lt('P'), None)
 
     def test_undo_longer_translation(self):
+        self.define('*', '{-}')
         self.define('P/P/-D', 'popped')
         self.translate(stroke('P'))
         self.translate(stroke('P'))
@@ -562,6 +568,7 @@ class TranslateStrokeTestCase(PloverTest):
         self.assertOutput(self.lt('P/P/-D'), self.lt('P P'), None)
 
     def test_undo_tail(self):
+        self.define('*', '{-}')
         self.s.tail = self.t('T/A/I/L')
         self.translate(stroke('*'))
         self.assertTranslations([])

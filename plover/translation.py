@@ -242,8 +242,23 @@ class Translator(object):
         do = []
         add_to_history = True
 
-        # TODO: Test the behavior of undoing until a translation is undoable.
-        if stroke.is_correction:
+        # Figure out how much of the translation buffer can be involved in this
+        # stroke and build the stroke list for translation.
+        num_strokes = 1
+        translation_count = 0
+        for t in reversed(self._state.translations):
+            num_strokes += len(t)
+            if num_strokes > self._dictionary.longest_key:
+                break
+            translation_count += 1
+        translation_index = len(self._state.translations) - translation_count
+        translations = self._state.translations[translation_index:]
+
+        mapping = self._lookup([stroke])
+
+        if mapping == '{-}':
+            # Undo stroke.
+            # TODO: Test the behavior of undoing until a translation is undoable.
             empty = True
             for t in reversed(self._state.translations):
                 undo.append(t)
@@ -259,20 +274,8 @@ class Translator(object):
                 # to the state history.
                 add_to_history = False
                 do = [Translation([stroke], _back_string())]
-        else:
-            # Figure out how much of the translation buffer can be involved in this
-            # stroke and build the stroke list for translation.
-            num_strokes = 1
-            translation_count = 0
-            for t in reversed(self._state.translations):
-                num_strokes += len(t)
-                if num_strokes > self._dictionary.longest_key:
-                    break
-                translation_count += 1
-            translation_index = len(self._state.translations) - translation_count
-            translations = self._state.translations[translation_index:]
 
-            mapping = self._lookup([stroke])
+        else:
 
             if mapping == '{*}':
                 # Toggle asterisk of previous stroke
@@ -292,6 +295,7 @@ class Translator(object):
             if t is not None:
                 do.append(t)
                 undo.extend(t.replaced)
+
         del self._state.translations[len(self._state.translations) - len(undo):]
         self._output(undo, do, self._state.last())
         if add_to_history:
