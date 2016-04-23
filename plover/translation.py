@@ -25,6 +25,8 @@ from plover.steno_dictionary import StenoDictionaryCollection
 from plover import system
 
 
+PREFIX_STROKE = Stroke(())
+
 _ESCAPE_RX = re.compile('(\\\\[nrt]|[\n\r\t])')
 _ESCAPE_REPLACEMENTS = {
     '\n': r'\n',
@@ -254,7 +256,7 @@ class Translator(object):
         translation_index = len(self._state.translations) - translation_count
         translations = self._state.translations[translation_index:]
 
-        mapping = self._lookup([stroke])
+        mapping = self._lookup_with_prefix(translations, [stroke])
 
         if mapping == '{-}':
             # Undo stroke.
@@ -349,7 +351,7 @@ class Translator(object):
         t = self._find_translation_helper(translations, stroke, system.SUFFIX_KEYS)
         if t:
             return t
-        return Translation([stroke], self._lookup([stroke], system.SUFFIX_KEYS))
+        return Translation([stroke], self._lookup_with_prefix(translations, [stroke], system.SUFFIX_KEYS))
 
     def _find_translation_helper(self, translations, stroke, suffixes=()):
         # The new stroke can either create a new translation or replace
@@ -359,11 +361,26 @@ class Translator(object):
             replaced = translations[i:]
             strokes = list(itertools.chain(*[t.strokes for t in replaced]))
             strokes.append(stroke)
-            mapping = self._lookup(strokes, suffixes)
+            mapping = self._lookup_with_prefix(translations[:i], strokes, suffixes)
             if mapping != None:
                 t = Translation(strokes, mapping)
                 t.replaced = replaced
                 return t
+
+    def _previous_word_is_finished(self, translations):
+        if not translations:
+            return True
+        formatting = translations[-1].formatting
+        if formatting is None:
+            return True
+        return formatting[-1].word_is_finished
+
+    def _lookup_with_prefix(self, translations, strokes, suffixes=()):
+        if self._previous_word_is_finished(translations):
+            mapping = self._lookup([PREFIX_STROKE] + strokes, suffixes)
+            if mapping is not None:
+                return mapping
+        return self._lookup(strokes, suffixes)
 
     def _lookup(self, strokes, suffixes=()):
         dict_key = tuple(s.rtfcre for s in strokes)

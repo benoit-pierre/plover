@@ -210,7 +210,7 @@ class _Action(object):
 
     def __init__(self, attach=False, glue=False, word='', capitalize=False,
                  lower=False, orthography=True, space_char=' ',
-                 upper=False, upper_carry=False,
+                 upper=False, upper_carry=False, word_is_finished=None,
                  case=CASE_NONE, text='', replace='', combo='',
                  command=''):
         """Initialize a new action.
@@ -242,6 +242,8 @@ class _Action(object):
 
         case -- an integer to determine which case to output after formatting
 
+        word_is_finished -- True if word is finished.
+
         text -- The text that should be rendered for this action.
 
         replace -- Text that should be deleted for this action.
@@ -261,6 +263,10 @@ class _Action(object):
         self.upper = upper
         self.upper_carry = upper_carry
         self.orthography = orthography
+        if word_is_finished is None:
+            self.word_is_finished = not self.attach
+        else:
+            self.word_is_finished = word_is_finished
 
         # Persistent state variables
         self.space_char = space_char
@@ -285,6 +291,7 @@ class _Action(object):
         a.orthography = self.orthography
         a.case = self.case
         a.space_char = self.space_char
+        a.word_is_finished = self.word_is_finished
         return a
 
     def __eq__(self, other):
@@ -369,6 +376,7 @@ def _translation_to_actions(translation, last_action, spaces_after):
 
 SPACE = ' '
 NO_SPACE = ''
+META_WORD_END = '$'
 META_STOPS = ('.', '!', '?')
 META_COMMAS = (',', ':', ';')
 META_CAPITALIZE = '-|'
@@ -459,6 +467,7 @@ def _atom_to_action_spaces_before(atom, last_action):
     """
 
     action = _Action(space_char=last_action.space_char, case=last_action.case)
+    action.word_is_finished = None
     last_word = last_action.word
     last_glue = last_action.glue
     last_attach = last_action.attach
@@ -527,6 +536,9 @@ def _atom_to_action_spaces_before(atom, last_action):
         elif meta.startswith(META_RETRO_FORMAT):
             if meta.startswith(META_RETRO_FORMAT) and meta.endswith(')'):
                 action = _apply_currency(meta, last_action)
+        elif meta == META_WORD_END:
+            action = last_action.copy_state()
+            action.word_is_finished = True
         elif meta.startswith(META_COMMAND):
             action = last_action.copy_state()
             action.command = meta[len(META_COMMAND):]
@@ -592,6 +604,9 @@ def _atom_to_action_spaces_before(atom, last_action):
         action.text = space + text
         action.word = _rightmost_word(text)
 
+    if action.word_is_finished is None:
+        action.word_is_finished = not action.attach
+
     action.text = _apply_mode(action.text, action.case, action.space_char,
                               begin, last_attach, last_glue,
                               last_capitalize, last_upper, last_lower)
@@ -615,6 +630,7 @@ def _atom_to_action_spaces_after(atom, last_action):
     """
 
     action = _Action(space_char=last_action.space_char, case=last_action.case)
+    action.word_is_finished = None
     last_word = last_action.word
     last_glue = last_action.glue
     last_attach = last_action.attach
@@ -700,6 +716,9 @@ def _atom_to_action_spaces_after(atom, last_action):
         elif meta.startswith(META_RETRO_FORMAT):
             if meta.startswith(META_RETRO_FORMAT) and meta.endswith(')'):
                 action = _apply_currency(meta, last_action, spaces_after=True)
+        elif meta == META_WORD_END:
+            action = last_action.copy_state()
+            action.word_is_finished = True
         elif meta.startswith(META_COMMAND):
             action = last_action.copy_state()
             action.command = meta[len(META_COMMAND):]
@@ -785,6 +804,9 @@ def _atom_to_action_spaces_after(atom, last_action):
         action.text = text + SPACE
         action.word = _rightmost_word(text)
 
+    if action.word_is_finished is None:
+        action.word_is_finished = not action.attach
+
     action.text = _apply_mode(action.text, action.case, action.space_char,
                               begin, last_attach, last_glue,
                               last_capitalize, last_upper, last_lower)
@@ -848,6 +870,7 @@ def _apply_carry_capitalize(meta, last_action, spaces_after=False):
 
     action = last_action.copy_state()
     action.attach = attach_next
+    action.word_is_finished = not attach_next
 
     # Spaces after: delete last space if we're attaching.
     replace_last = last_action.text.endswith(SPACE) and attach_last
