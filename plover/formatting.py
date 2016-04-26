@@ -110,6 +110,30 @@ class Formatter(object):
         old = [a for t in undo for a in t.formatting]
         new = [a for t in do for a in t.formatting]
 
+        if prev_formatting and do:
+            text = ''
+            for a in new:
+                if a.text:
+                    text = a.text
+                    break
+            for n, a in enumerate(reversed(prev_formatting)):
+                if not isinstance(a, _LookAheadAction):
+                    continue
+                if re.match(a._pattern, text) is None:
+                    action = a._action2
+                else:
+                    action = a._action1
+                if action != a._action:
+                    if n:
+                        tail = prev_formatting[-n:]
+                        prev_formatting = prev_formatting[:n]
+                        old = tail + old
+                        new = tail + new
+                    old = [a._action] + old
+                    new = [action] + new
+                    a.set(action)
+                break
+
         for callback in self._listeners:
             callback(old, new)
 
@@ -307,6 +331,21 @@ class _Action(object):
     def __repr__(self):
         return str(self)
 
+class _LookAheadAction(_Action):
+
+    def __init__(self, pattern, action1, action2):
+        self._pattern = pattern
+        self._action1 = action1
+        self._action2 = action2
+        self.set(action1)
+
+    def set(self, action):
+        self.__dict__.update(action.__dict__)
+        self._action = action
+
+    def __str__(self):
+        return 'LookAheadAction(%s)' % str(self.__dict__)
+
 META_ESCAPE = '\\'
 RE_META_ESCAPE = '\\\\'
 META_START = '{'
@@ -390,6 +429,7 @@ META_RETRO_FORMAT = '*('
 META_GLUE_FLAG = '&'
 META_ATTACH_FLAG = '^'
 META_KEY_COMBINATION = '#'
+META_TEST = '='
 META_COMMAND = 'PLOVER:'
 META_MODE = 'MODE:'
 MODE_CAPS = 'CAPS'
@@ -478,6 +518,7 @@ def _atom_to_action_spaces_before(atom, last_action):
     last_orthography = last_action.orthography
     begin = False  # for meta attach
     meta = _get_meta(atom)
+    action_is_finalized = False
     if meta is not None:
         meta = _unescape_atom(meta)
         if meta in META_COMMAS:
@@ -591,6 +632,33 @@ def _atom_to_action_spaces_before(atom, last_action):
         elif meta.startswith(META_KEY_COMBINATION):
             action = last_action.copy_state()
             action.combo = meta[len(META_KEY_COMBINATION):]
+        elif meta.startswith(META_TEST):
+            pattern, result1, result2 = meta[1:].split('/')
+            action_list = []
+            for atom in result1, result2:
+                text = _unescape_atom(atom)
+                if last_capitalize:
+                    text = _capitalize(text)
+                if last_lower:
+                    text = _lower(text)
+                if last_upper:
+                    text = _upper(text)
+                    action.upper_carry = True
+                space = NO_SPACE if last_attach else SPACE
+                result_action = action.copy_state()
+                result_action.text = space + text
+                result_action.word = _rightmost_word(text)
+                if not result_action.attach:
+                    result_action.word_is_finished = True
+                result_action.text = _apply_mode(result_action.text,
+                                                 result_action.case,
+                                                 result_action.space_char,
+                                                 begin, last_attach, last_glue,
+                                                 last_capitalize, last_upper,
+                                                 last_lower)
+                action_list.append(result_action)
+            action = _LookAheadAction(pattern, *action_list)
+            action_is_finalized = True
     else:
         text = _unescape_atom(atom)
         if last_capitalize:
@@ -604,12 +672,14 @@ def _atom_to_action_spaces_before(atom, last_action):
         action.text = space + text
         action.word = _rightmost_word(text)
 
-    if action.word_is_finished is None:
-        action.word_is_finished = not action.attach
+    if not action_is_finalized:
 
-    action.text = _apply_mode(action.text, action.case, action.space_char,
-                              begin, last_attach, last_glue,
-                              last_capitalize, last_upper, last_lower)
+        if action.word_is_finished is None:
+            action.word_is_finished = not action.attach
+
+        action.text = _apply_mode(action.text, action.case, action.space_char,
+                                  begin, last_attach, last_glue,
+                                  last_capitalize, last_upper, last_lower)
 
     return action
 
