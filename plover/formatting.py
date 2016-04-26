@@ -39,6 +39,7 @@ META_RETRO_FORMAT = '*('
 META_RETRO_LOWER = '*>'
 META_RETRO_UPPER = '*<'
 META_STOPS = ('.', '!', '?')
+META_TEST = '='
 META_UPPER = '<'
 META_WORD_END = '$'
 MODE_CAMEL = 'CAMEL'
@@ -334,6 +335,34 @@ class Formatter(object):
 
         old = [a for t in undo for a in t.formatting]
 
+        # Take into account previous look-ahead actions.
+
+        if prev:
+            text = ''
+            for a in new:
+                if a.text:
+                    text = a.text
+                    break
+            tail = []
+            for a in RetroFormatter(prev).iter_last_actions():
+                if isinstance(a, _LookAheadAction):
+                    old_a, new_a = a.action, a.update(text)
+                    # Does the look-ahead action need updating?
+                    if new_a == old_a:
+                        # No, we're done.
+                        break
+                    old[0:0] = [old_a] + tail
+                    new[0:0] = [new_a] + tail
+                    text = a.text
+                    tail = []
+                    # Updating this action can impact another
+                    # previous look-ahead action, keep going.
+                elif a.text is not None:
+                    if a.text:
+                        # Stop when encountering a non-empty text action.
+                        break
+                    tail.insert(0, a)
+
         # Figure out what really changed.
 
         min_length = min(len(old), len(new))
@@ -612,6 +641,29 @@ class _Action(object):
 _Action.DEFAULT = _Action()
 
 
+class _LookAheadAction(_Action):
+
+    def __init__(self, pattern, action1, action2):
+        self.pattern = pattern
+        self.action1 = action1
+        self.action2 = action2
+        self.action = None
+        self.update('')
+
+    def update(self, text):
+        if re.match(self.pattern, text) is None:
+            self.action = self.action2
+        else:
+            self.action = self.action1
+        return self.action
+
+    def __getattr__(self, name):
+        return getattr(self.action, name)
+
+    def __str__(self):
+        return 'LookAheadAction(%s)' % str(self.__dict__)
+
+
 def _translation_to_actions(translation, ctx):
     """Create actions for a translation.
 
@@ -724,6 +776,8 @@ def _atom_to_action(atom, ctx):
             action = _apply_meta_attach(meta, ctx)
         elif meta.startswith(META_KEY_COMBINATION):
             action = _apply_meta_combo(meta, ctx)
+        elif meta.startswith(META_TEST):
+            action = _apply_meta_test(meta, ctx)
         elif meta.startswith(META_CUSTOM):
             meta_args = meta[1:].split(':', 1)
             meta_fn = registry.get_plugin('meta', meta_args[0]).obj
@@ -733,28 +787,37 @@ def _atom_to_action(atom, ctx):
     else:
         action = ctx.new_action()
         action.text = _unescape_atom(atom)
-    # Finalize action's text.
-    text = action.text
-    if text is not None:
-        # Update word.
-        if action.word is None:
-            last_word = None
-            if action.glue and ctx.last_action.glue:
-                last_word = ctx.last_action.word
-            action.word = _rightmost_word((last_word or '') + text)
-        # Apply case.
-        case = ctx.last_action.next_case
-        if case is None and action.prev_attach and ctx.last_action.upper_carry:
-            case = CASE_UPPER_FIRST_WORD
-        text = _apply_case(text, case)
-        if case == CASE_UPPER_FIRST_WORD:
-            action.upper_carry = not _has_word_boundary(text)
-        # Apply mode.
-        action.text = _apply_mode(text, action.case, action.space_char,
-                                  action.prev_attach, ctx.last_action)
-        # Update trailing space.
-        action.trailing_space = '' if action.next_attach else action.space_char
+    _finalize_action(ctx, action)
     return action
+
+
+def _finalize_action(ctx, action):
+    '''Finalize action's text.'''
+    if isinstance(action, _LookAheadAction):
+        _finalize_action(ctx, action.action1)
+        _finalize_action(ctx, action.action2)
+        return
+    text = action.text
+    if text is None:
+        return
+    # Update word.
+    if action.word is None:
+        last_word = None
+        if action.glue and ctx.last_action.glue:
+            last_word = ctx.last_action.word
+        action.word = _rightmost_word((last_word or '') + text)
+    # Apply case.
+    case = ctx.last_action.next_case
+    if case is None and action.prev_attach and ctx.last_action.upper_carry:
+        case = CASE_UPPER_FIRST_WORD
+    text = _apply_case(text, case)
+    if case == CASE_UPPER_FIRST_WORD:
+        action.upper_carry = not _has_word_boundary(text)
+    # Apply mode.
+    action.text = _apply_mode(text, action.case, action.space_char,
+                              action.prev_attach, ctx.last_action)
+    # Update trailing space.
+    action.trailing_space = '' if action.next_attach else action.space_char
 
 
 def _apply_meta_attach(meta, ctx):
@@ -874,6 +937,16 @@ def _apply_meta_finish_word(meta, ctx):
     action = ctx.copy_last_action()
     action.word_is_finished = True
     return action
+
+
+def _apply_meta_test(meta, ctx):
+    pattern, result1, result2 = meta[1:].split('/')
+    action_list = []
+    for atom in result1, result2:
+        action = ctx.new_action()
+        action.text = _unescape_atom(atom)
+        action_list.append(action)
+    return _LookAheadAction(pattern, *action_list)
 
 
 def _apply_meta_carry_capitalize(meta, ctx):
