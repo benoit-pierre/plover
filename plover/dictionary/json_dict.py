@@ -33,5 +33,7 @@ def load_dictionary(filename):
 
 # TODO: test this
 def save_dictionary(d, fp):
-    d = dict(('/'.join(k), v) for k, v in d.iteritems())
-    json.dump(d, fp, sort_keys=True, indent=0, separators=(',', ': '))
+    contents = json.dumps(dict(('/'.join(k), v) for k, v in d.iteritems()),
+                          ensure_ascii=False, sort_keys=True,
+                          indent=0, separators=(',', ': '))
+    fp.write(contents.encode('utf-8'))
