@@ -29,6 +29,15 @@ from plover import log
 from plover import __name__ as __software_name__
 from plover import __version__
 
+if sys.platform.startswith('win32'):
+    from plover.oslayer import winconsole
+    def redirect_to_console():
+        if winconsole.redirect_to_console():
+            log.update_stderr(sys.stderr)
+else:
+    redirect_to_console = lambda: None
+
+
 def show_error(title, message):
     """Report error to the user.
 
@@ -57,11 +66,24 @@ def init_config_dir():
         with open(CONFIG_FILE, 'wb') as f:
             f.close()
 
+class ArgumentParser(argparse.ArgumentParser):
+
+    NEEDS_CONSOLE = set(
+        '''
+        print_usage
+        print_help
+        exit
+        '''.split())
+
+    def __getattribute__(self, name):
+        if name in ArgumentParser.NEEDS_CONSOLE:
+            redirect_to_console()
+        return super(ArgumentParser, self).__getattribute__(name)
 
 def main():
     """Launch plover."""
     description = "Run the plover stenotype engine. This is a graphical application."
-    parser = argparse.ArgumentParser(description=description)
+    parser = ArgumentParser(description=description)
     parser.add_argument('--version', action='version', version='%s %s'
                         % (__software_name__.capitalize(), __version__))
     parser.add_argument('-s', '--script', default=None, nargs=argparse.REMAINDER,
@@ -69,12 +91,19 @@ def main():
                         'passing in the rest of the command line arguments, '
                         'print list of available scripts when no argument is given')
     parser.add_argument('-l', '--log-level', choices=['debug', 'info', 'warning', 'error', 'critical'],
-                        default='warning', help='set log level')
+                        default=None, help='set log level')
     args = parser.parse_args(args=sys.argv[1:])
-    log.set_level(args.log_level.upper())
 
     try:
+        if args.log_level is None:
+            log_level = 'WARNING'
+        else:
+            redirect_to_console()
+            log_level = args.log_level.upper()
+        log.set_level(log_level)
+
         if args.script is not None:
+            redirect_to_console()
             registry.load_plugins()
             registry.update()
             scripts = registry.get_scripts()
@@ -94,7 +123,7 @@ def main():
                 for name, entrypoint in sorted(scripts.items()):
                     print '%s [%s]' % (name, entrypoint.dist.project_name)
                 code = 0
-            os._exit(code)
+            sys.exit(code)
 
         # Ensure only one instance of Plover is running at a time.
         with plover.oslayer.processlock.PloverLock():
@@ -110,9 +139,12 @@ def main():
                 config.save(f)
     except plover.oslayer.processlock.LockNotAcquiredException:
         show_error('Error', 'Another instance of Plover is already running.')
+        sys.exit(1)
+    except SystemExit:
+        raise
     except:
         show_error('Unexpected error', traceback.format_exc())
-    os._exit(1)
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

@@ -73,6 +73,14 @@ class Logger(object):
         self._log_strokes = False
         self._log_translations = False
 
+    def update_stderr(self, stream):
+        self._print_handler.acquire()
+        try:
+            self._print_handler.flush()
+            self._print_handler.stream = stream
+        finally:
+            self._print_handler.release()
+
     def setup_logfile(self):
         assert self._file_handler is None
         self._file_handler = FileHandler()
@@ -140,4 +148,6 @@ enable_stroke_logging = __logger.enable_stroke_logging
 enable_translation_logging = __logger.enable_translation_logging
 # Logfile support.
 setup_logfile = __logger.setup_logfile
+# Support for switching stderr stream
+update_stderr = __logger.update_stderr
 
