@@ -16,6 +16,7 @@ class Registry(object):
 
     def __init__(self):
         self._assets = {}
+        self._scripts = {}
         self._systems = {}
         self._machines = {}
         self._dictionaries = {}
@@ -29,13 +30,27 @@ class Registry(object):
         if errors:
             log.error("error(s) while loading plugins: %s", errors)
 
+    def _add_entrypoint(self, plugin_type, plugin_dict, entrypoint):
+        if entrypoint.name in plugin_dict:
+            if entrypoint != plugin_dict[entrypoint.name]:
+                log.warning('ignoring duplicate %s: %s [%s]',
+                            plugin_type, entrypoint.name,
+                            entrypoint.dist.project_name)
+            return
+        log.info('%s: %s [%s]',
+                 plugin_type, entrypoint.name,
+                 entrypoint.dist.project_name)
+        plugin_dict[entrypoint.name] = entrypoint
+
     def update(self):
+        plugins = set()
         for assets_type, entrypoint_name in (
             ('dictionary', 'dictionaries'),
             ('wordlist', 'wordlists'),
         ):
             for entrypoint in pkg_resources.iter_entry_points('plover.asset',
                                                               name=entrypoint_name):
+                plugins.add(entrypoint.dist)
                 try:
                     for name, resource_name in entrypoint.load():
                         resource_id = '%s%s:%s' % (
@@ -45,11 +60,12 @@ class Registry(object):
                         )
                         self._assets[resource_id] = (entrypoint.module_name,
                                                      resource_name)
-                        log.info('%s %s', ASSET_SCHEME, resource_id)
+                        log.info('%s %s [%s]', ASSET_SCHEME, resource_id,
+                                 entrypoint.dist.project_name)
                 except Exception:
-                    log.error('loading entrypoint %s: %s (from %s)',
+                    log.error('loading entrypoint %s: %s [%s]',
                               assets_type, entrypoint.name,
-                              entrypoint.module_name,
+                              entrypoint.dist.project_name,
                               exc_info=True)
         for plugin_dict, plugin_type in (
             (self._systems, 'system'),
@@ -58,20 +74,19 @@ class Registry(object):
         ):
             entrypoint_type = 'plover.%s' % plugin_type
             for entrypoint in pkg_resources.iter_entry_points(entrypoint_type):
-                if entrypoint.name in plugin_dict:
-                    if entrypoint != plugin_dict[entrypoint.name]:
-                        log.warning('ignoring duplicate %s: %s (from %s)',
-                                    plugin_type,
-                                    entrypoint.name,
-                                    entrypoint.module_name)
-                    continue
-                log.info('%s: %s (from %s)',
-                         plugin_type, entrypoint.name,
-                         entrypoint.module_name)
-                plugin_dict[entrypoint.name] = entrypoint
+                plugins.add(entrypoint.dist)
+                self._add_entrypoint(plugin_type, plugin_dict, entrypoint)
+
+        for entrypoint in pkg_resources.iter_entry_points('console_scripts'):
+            if not entrypoint.dist in plugins:
+                continue
+            self._add_entrypoint('script', self._scripts, entrypoint)
 
     def get_assets(self):
         return self._assets
+
+    def get_scripts(self):
+        return self._scripts
 
     def get_systems(self):
         return self._systems

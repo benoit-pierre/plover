@@ -16,6 +16,7 @@ if not hasattr(sys, 'frozen'):
 
 import wx
 import json
+import pkg_resources
 
 from collections import OrderedDict
 
@@ -23,6 +24,7 @@ import plover.gui.main
 import plover.oslayer.processlock
 from plover.oslayer.config import CONFIG_DIR
 from plover.config import CONFIG_FILE, DEFAULT_DICTIONARIES, Config
+from plover.registry import registry
 from plover import log
 from plover import __name__ as __software_name__
 from plover import __version__
@@ -62,11 +64,38 @@ def main():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--version', action='version', version='%s %s'
                         % (__software_name__.capitalize(), __version__))
+    parser.add_argument('-s', '--script', default=None, nargs=argparse.REMAINDER,
+                        help='use another plugin console script as main entrypoint, '
+                        'passing in the rest of the command line arguments, '
+                        'print list of available scripts when no argument is given')
     parser.add_argument('-l', '--log-level', choices=['debug', 'info', 'warning', 'error', 'critical'],
                         default='warning', help='set log level')
     args = parser.parse_args(args=sys.argv[1:])
     log.set_level(args.log_level.upper())
+
     try:
+        if args.script is not None:
+            registry.load_plugins()
+            registry.update()
+            scripts = registry.get_scripts()
+            if args.script:
+                name = args.script[0]
+                entrypoint = scripts.get(name)
+                if entrypoint is None:
+                    log.error('no such script: %s', name)
+                    code = 1
+                else:
+                    sys.argv = args.script
+                    code = entrypoint.load()()
+                if code is None:
+                    code = 0
+            else:
+                print 'available script(s):'
+                for name, entrypoint in sorted(scripts.items()):
+                    print '%s [%s]' % (name, entrypoint.dist.project_name)
+                code = 0
+            os._exit(code)
+
         # Ensure only one instance of Plover is running at a time.
         with plover.oslayer.processlock.PloverLock():
             init_config_dir()
