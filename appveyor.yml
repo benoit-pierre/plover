@@ -64,13 +64,13 @@ build_script:
   - "ECHO PATH=%PATH%"
 
 after_build:
-  - "python windows\\helper.py dist"
+  - "python windows\\helper.py dist_melani"
 
 test_script:
   - "python setup.py test"
 
 artifacts:
 
-  - path: dist\*.exe
-    name: executable
+  - path: dist\*.zip
+    name: archive
 

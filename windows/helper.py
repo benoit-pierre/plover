@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import argparse
+import glob
 import hashlib
 import inspect
 import json
@@ -513,6 +514,36 @@ class Helper(object):
         self._rmtree('dist')
         info('creating distribution')
         self._env.run(('python.exe', 'setup.py', 'bdist_win'))
+
+    def cmd_dist_melani(self):
+        '''create melani distribution
+        '''
+        self.cmd_dist()
+        exe = '%s-%s.exe' % (APPNAME, VERSION)
+        dist_dir = 'dist/%s-Melani-%s' % (APPNAME, VERSION)
+        self._makedirs(dist_dir)
+        self._rename('dist/%s' % exe, '%s/plover.exe' % dist_dir)
+        for src_pattern in (
+            'melani_briefs.json',
+            'melani_fragments.json',
+            'plugins/Plover_Italian_Stentura-1.0.0-py2.7.egg',
+            'plugins/Plover_Melani-0.0-py2.7.egg',
+            'plugins/Plover_Python_Dictionary-1.0.0-py2.7.egg',
+            'plover.cfg',
+        ):
+            for src in glob.glob(src_pattern):
+                dst = os.path.join(dist_dir, src)
+                self._makedirs(os.path.dirname(dst))
+                self._copyfile(src, dst)
+        for script in (
+            'melani_testortho',
+            'melani_voc2json',
+            'melani_sortdict',
+        ):
+            with open('%s/%s.bat' % (dist_dir, script), 'wb') as fp:
+                fp.write('%%~dp0\\plover.exe -s %s %%*\r\n' % script)
+        info('packaging distribution')
+        self._zipdir(dist_dir)
 
     def main(self, args):
         opts = self._parser.parse_args(args)

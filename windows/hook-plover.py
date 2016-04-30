@@ -24,3 +24,5 @@ for group in distribution.get_entry_map().values():
     for entrypoint in group.values():
         hiddenimports.append(entrypoint.module_name)
 
+hiddenimports.append('csv')
+
