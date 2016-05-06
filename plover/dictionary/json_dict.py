@@ -14,6 +14,8 @@ from plover.steno_dictionary import StenoDictionary
 from plover.steno import normalize_steno
 from plover import resource
 
+def create_dictionary():
+    return StenoDictionary()
 
 def load_dictionary(filename):
 
