@@ -354,6 +354,7 @@ if __name__ == '__main__':
 
         [console_scripts]
         plover = plover.main:main
+        plover_convert_dictionary = plover.scripts.convert:run
 
         [setuptools.installation]
         eggsecutable = plover.main:main
