@@ -204,7 +204,7 @@ class WineEnvironment(Environment):
         ):
             if var in env:
                 del env[var]
-            return env
+        return env
 
 
 class Win32Environment(Environment):
