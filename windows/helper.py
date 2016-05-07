@@ -250,6 +250,10 @@ class Helper(object):
         ('pywin32'          , 'http://downloads.sourceforge.net/project/pywin32/pywin32/Build 219/pywin32-219.win32-py2.7.exe'                    , '8bc39008383c646bed01942584117113ddaefe6b', 'easy_install', (), None),
         ('Cython'           , 'https://pypi.python.org/packages/2.7/C/Cython/Cython-0.23.4-cp27-none-win32.whl'                                   , 'd7c1978fe2037674b151622158881c700ac2f06a', None, (), None),
         ('VC for Python'    , 'https://download.microsoft.com/download/7/9/6/796EF2E4-801B-4FC4-AB28-B59FBF6D907B/VCForPython27.msi'              , '7800d037ba962f288f9b952001106d35ef57befe', None, (), None),
+        # Plugins dependencies.
+        ('ezodf', 'pip:ezodf', None, None, (), None),
+        ('weakrefset', 'pip:weakrefset', None, None, (), None),
+        ('lxml', 'pip:lxml', None, None, (), None),
     )
 
     def __init__(self):
@@ -518,17 +522,23 @@ class Helper(object):
     def cmd_dist_melani(self):
         '''create melani distribution
         '''
+        from plover import (
+            __name__ as __software_name__,
+            __version__,
+        )
         self.cmd_dist()
-        exe = '%s-%s.exe' % (APPNAME, VERSION)
-        dist_dir = 'dist/%s-Melani-%s' % (APPNAME, VERSION)
+        exe = '%s-%s.exe' % (__software_name__, __version__)
+        dist_dir = 'dist/%s-Melani-%s' % (__software_name__, __version__)
         self._makedirs(dist_dir)
         self._rename('dist/%s' % exe, '%s/plover.exe' % dist_dir)
         for src_pattern in (
             'melani_briefs.json',
             'melani_fragments.json',
-            'plugins/Plover_Italian_Stentura-1.0.0-py2.7.egg',
-            'plugins/Plover_Melani-0.0-py2.7.egg',
-            'plugins/Plover_Python_Dictionary-1.0.0-py2.7.egg',
+            'plugins/Plover_CSV_Dictionary-0.5.0-py2.7.egg',
+            'plugins/Plover_Italian_Stentura-0.5.0-py2.7.egg',
+            'plugins/Plover_Melani-0.5.0-py2.7.egg',
+            'plugins/Plover_ODS_Dictionary-0.5.0-py2.7.egg',
+            'plugins/Plover_Python_Dictionary-0.5.0-py2.7.egg',
             'plover.cfg',
         ):
             for src in glob.glob(src_pattern):
@@ -539,8 +549,13 @@ class Helper(object):
             'melani_testortho',
             'melani_voc2json',
             'melani_sortdict',
+            'plover_convert_dictionary',
         ):
-            with open('%s/%s.bat' % (dist_dir, script), 'wb') as fp:
+            if script.startswith('plover_'):
+                name = script[len('plover_'):]
+            else:
+                name = script
+            with open('%s/%s.bat' % (dist_dir, name), 'wb') as fp:
                 fp.write('%%~dp0\\plover.exe -s %s %%*\r\n' % script)
         info('packaging distribution')
         self._zipdir(dist_dir)

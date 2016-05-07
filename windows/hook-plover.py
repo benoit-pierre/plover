@@ -43,7 +43,7 @@ if os.path.exists(plugins_dir):
     for distribution in pkg_resources.find_distributions(plugins_dir):
         log.info('adding plugin: %s', distribution.project_name)
         egg = '%s/%s.egg' % (plugins_dir, distribution.egg_name())
-        datas.append((egg, 'eggs'))
+        # datas.append((egg, 'eggs'))
         metadata.update(collect_metadata(distribution))
         for group_name, group in distribution.get_entry_map().items():
             for entrypoint in group.values():
