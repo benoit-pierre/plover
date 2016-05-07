@@ -30,18 +30,22 @@ def get_metadata(distribution):
             )
             if not os.path.exists(metadata):
                 return None
+    if not os.path.exists(metadata):
+        print 'no metadata for: %s' % distribution.project_name
+        return None
     return (metadata, egg_info)
 
 def collect_metadata(distribution):
-    metadata_list = [ get_metadata(distribution) ]
+    metadata_list = []
+    metadata = get_metadata(distribution)
+    if metadata is not None:
+        metadata_list.append(metadata)
     requirements = collect_requirements(distribution)
     requirements = sorted(requirements, key=lambda d: d.key)
     for dependency in requirements:
         metadata = get_metadata(dependency)
-        if metadata is None:
-            print 'no metadata for: %s' % dependency.project_name
-            continue
-        metadata_list.append(metadata)
+        if metadata is not None:
+            metadata_list.append(metadata)
     return metadata_list
 
 def pack(root_dir, path, archive_name):
