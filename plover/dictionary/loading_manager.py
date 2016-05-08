@@ -4,10 +4,12 @@
 """Centralized place for dictionary loading operation."""
 
 import sys
+import time
 import threading
 
 from plover.dictionary.base import load_dictionary
 from plover.exception import DictionaryLoaderException
+from plover import log
 
 
 class DictionaryLoadingManager(object):
@@ -24,6 +26,7 @@ class DictionaryLoadingManager(object):
         return op
 
     def load(self, filenames):
+        start = time.time()
         self.dictionaries = {f: self.start_loading(f) for f in filenames}
         dicts = []
         for f in filenames:
@@ -31,6 +34,7 @@ class DictionaryLoadingManager(object):
             if exc_info is not None:
                 raise exc_info[0], exc_info[1], exc_info[2]
             dicts.append(d)
+        log.info('loaded %u dictionaries in %.3fs', len(dicts), time.time() - start)
         return dicts
 
 
