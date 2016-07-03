@@ -49,7 +49,7 @@ def pyinstaller(*args):
             __version__,
         ),
         '--noconfirm',
-        '--windowed',
+        '--console',
         '--onefile'
     ]
     py_args.extend(args)
