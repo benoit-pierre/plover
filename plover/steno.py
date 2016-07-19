@@ -80,17 +80,20 @@ class Stroke(object):
 
         # Order the steno keys so comparisons can be made.
         steno_keys.sort(key=lambda x: system.KEY_ORDER.get(x, -1))
-         
+
         # Convert strokes involving the number bar to numbers.
         if system.NUMBER_KEY in steno_keys:
             numeral = False
             for i, e in enumerate(steno_keys):
                 if e in system.NUMBERS:
                     steno_keys[i] = system.NUMBERS[e]
+                    steno_keys_set.remove(e)
+                    steno_keys_set.add(steno_keys[i])
                     numeral = True
             if numeral:
                 steno_keys.remove(system.NUMBER_KEY)
-        
+                steno_keys_set.remove(system.NUMBER_KEY)
+
         if steno_keys_set & system.IMPLICIT_HYPHEN_KEYS:
             self.rtfcre = ''.join(key.strip('-') for key in steno_keys)
         else:
