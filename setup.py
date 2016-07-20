@@ -264,7 +264,7 @@ setup_requires.append('pytest')
 
 install_requires = [
     'setuptools',
-    'pyserial>=2.6',
+    'pyserial==3.0.1',
     'appdirs>=1.3.0',
     'hidapi',
 ]
