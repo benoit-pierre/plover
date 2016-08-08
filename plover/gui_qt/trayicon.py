@@ -1,3 +1,4 @@
+import sys
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QIcon
@@ -61,7 +62,10 @@ class TrayIcon(QObject):
         if not self._supported:
             return
         self._trayicon = QSystemTrayIcon()
-        self._trayicon.activated.connect(self._on_activated)
+        # On OS X, the context menu is activated with either mouse buttons,
+        # and activation messages are still sent, so ignore those...
+        if not sys.platform.startswith('darwin'):
+            self._trayicon.activated.connect(self._on_activated)
         self._enabled = True
         self._update_state()
         self._trayicon.show()
