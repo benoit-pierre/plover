@@ -73,7 +73,7 @@ build_script:
   - "python setup.py build"
 
 after_build:
-  - "python windows\\helper.py dist"
+  - "python windows\\helper.py -v dist"
 
 test_script:
   - "python setup.py test"
