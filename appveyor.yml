@@ -80,6 +80,6 @@ test_script:
 
 artifacts:
 
-  - path: dist\*.exe
-    name: executable
+  - path: dist\*.zip
+    name: distribution
 

@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+import zipfile
 
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
@@ -119,7 +120,21 @@ class BinaryDistWin(PyInstallerDist):
     description = 'create an executable for MS Windows'
     extra_args = [
         '--icon=plover/assets/plover.ico',
+        '--onedir',
     ]
+
+    def run(self):
+        PyInstallerDist.run(self)
+        directory = 'dist/%s' % PACKAGE
+        zipname = 'dist/%s.zip' % PACKAGE
+        prefix = os.path.dirname(directory)
+        with zipfile.ZipFile(zipname, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+            for dirpath, dirnames, filenames in os.walk(directory):
+                for name in filenames:
+                    src = os.path.join(dirpath, name)
+                    dst = os.path.relpath(src, prefix)
+                    zf.write(src, dst)
+
 
 
 class Launch(Command):
