@@ -1,5 +1,5 @@
 
-from PyQt5.QtCore import QSettings
+from PyQt5.QtCore import QSettings, QSize
 from PyQt5.QtWidgets import (
     QMainWindow,
     QMenu,
@@ -16,6 +16,7 @@ def ToolButton(action):
 
 def ToolBar(*action_list):
     toolbar = QToolBar()
+    toolbar.setIconSize(QSize(16, 16))
     for action in action_list:
         toolbar.addWidget(ToolButton(action))
     return toolbar
