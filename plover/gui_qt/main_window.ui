@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>258</width>
-    <height>124</height>
+    <width>250</width>
+    <height>99</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -25,6 +25,9 @@
   <property name="windowIcon">
    <iconset resource="resources/resources.qrc">
     <normaloff>:/plover.png</normaloff>:/plover.png</iconset>
+  </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>true</bool>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -67,7 +70,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>258</width>
+     <width>250</width>
      <height>19</height>
     </rect>
    </property>
@@ -108,11 +111,17 @@
    <property name="windowTitle">
     <string>Plover: Toolbar</string>
    </property>
+   <property name="movable">
+    <bool>false</bool>
+   </property>
    <property name="iconSize">
     <size>
      <width>16</width>
      <height>16</height>
     </size>
+   </property>
+   <property name="floatable">
+    <bool>false</bool>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
