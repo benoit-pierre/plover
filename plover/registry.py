@@ -50,14 +50,12 @@ class Registry(object):
         plugin_dict[entrypoint.name] = entrypoint
 
     def update(self):
-        plugins = set()
         for assets_type, entrypoint_name in (
             ('dictionary', 'dictionaries'),
             ('wordlist', 'wordlists'),
         ):
             for entrypoint in pkg_resources.iter_entry_points('plover.asset',
                                                               name=entrypoint_name):
-                plugins.add(entrypoint.dist)
                 try:
                     for name, resource_name in entrypoint.load():
                         resource_id = '%s%s:%s' % (
@@ -81,12 +79,9 @@ class Registry(object):
         ):
             entrypoint_type = 'plover.%s' % plugin_type
             for entrypoint in pkg_resources.iter_entry_points(entrypoint_type):
-                plugins.add(entrypoint.dist)
                 self._add_entrypoint(plugin_type, plugin_dict, entrypoint)
 
         for entrypoint in pkg_resources.iter_entry_points('console_scripts'):
-            if not entrypoint.dist in plugins:
-                continue
             self._add_entrypoint('script', self._scripts, entrypoint)
 
     def get_assets(self):
