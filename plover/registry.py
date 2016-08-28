@@ -21,11 +21,18 @@ class Registry(object):
         self._machines = {}
         self._dictionaries = {}
 
-    def load_plugins(self, plugins_dir=PLUGINS_DIR):
+    def load_plugins(self, plugins_dir=None):
+        if plugins_dir is None:
+            plugins_dir = PLUGINS_DIR
         log.info('loading plugins from %s', plugins_dir)
         working_set = pkg_resources.working_set
         environment = pkg_resources.Environment([plugins_dir])
         distributions, errors = working_set.find_plugins(environment)
+        for dist in distributions:
+            if dist.location.startswith(plugins_dir):
+                log.info('plugin: %s [%s]',
+                         dist.project_name,
+                         dist.version)
         map(working_set.add, distributions)
         if errors:
             log.error("error(s) while loading plugins: %s", errors)
