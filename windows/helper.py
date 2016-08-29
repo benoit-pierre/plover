@@ -251,9 +251,11 @@ class Helper(object):
         ('Cython'           , 'https://pypi.python.org/packages/2.7/C/Cython/Cython-0.23.4-cp27-none-win32.whl'                                   , 'd7c1978fe2037674b151622158881c700ac2f06a', None, (), None),
         ('VC for Python'    , 'https://download.microsoft.com/download/7/9/6/796EF2E4-801B-4FC4-AB28-B59FBF6D907B/VCForPython27.msi'              , '7800d037ba962f288f9b952001106d35ef57befe', None, (), None),
         # Plugins dependencies.
+        ('pip', 'pip:pip', None, None, (), None),
         ('lxml', 'pip:https://ci.appveyor.com/api/buildjobs/2nt01gtnv12hi0qy/artifacts/dist/lxml-3.6.0-cp27-cp27m-win32.whl', None, None, (), None),
         ('weakrefset', 'pip:weakrefset', None, None, (), None),
         ('ezodf', 'pip:ezodf', None, None, (), None),
+        ('pyreadline', 'pip:pyreadline', None, None, (), None),
     )
 
     def __init__(self):
@@ -412,7 +414,7 @@ class Helper(object):
         self._env.run(cmd)
 
     def _pip_install(self, *args):
-        cmd = ['pip.exe',
+        cmd = ['python.exe', '-m', 'pip',
                '--timeout=5',
                '--retries=2',
                '--disable-pip-version-check']
