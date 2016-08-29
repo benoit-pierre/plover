@@ -551,6 +551,7 @@ class Helper(object):
             'melani_voc2json',
             'melani_sortdict',
             'plover_convert_dictionary',
+            'plover_shell',
         ):
             if script.startswith('plover_'):
                 name = script[len('plover_'):]
