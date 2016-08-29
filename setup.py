@@ -272,7 +272,7 @@ install_requires = [
 extras_require = {
     ':"win32" in sys_platform': [
         'pywin32>=219',
-        'win_unicode_console',
+        'win_unicode_console==0.4',
         # Can't reliably require wxPython
     ],
     ':"linux" in sys_platform': [
