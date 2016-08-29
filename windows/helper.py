@@ -541,7 +541,7 @@ class Helper(object):
             'plugins/Plover_Melani-0.5.0-py2.7.egg',
             'plugins/Plover_ODS_Dictionary-0.5.0-py2.7.egg',
             'plugins/Plover_Python_Dictionary-0.5.0-py2.7.egg',
-            'plugins/Plover_Shell-0.5.0-py2.7.egg',
+            'plugins/Plover_Shell-0.5.1-py2.7.egg',
             'plover.cfg',
         ):
             for src in glob.glob(src_pattern):
