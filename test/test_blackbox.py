@@ -138,6 +138,25 @@ class BlackboxTest(unittest.TestCase):
             self.translator.translate(stroke)
         self.assertEqual(self.output.text, u'$1.20 ')
 
+    def test_undo_fingerspelling(self):
+        for steno, translation in (
+            # ('TEFT', 'test'),
+            ('T*', '{>}{&t}'),
+            ('E*', '{>}{&e}'),
+            ('S*', '{>}{&s}'),
+            ('T*', '{>}{&t}'),
+        ):
+            self.dictionary.set(normalize_steno(steno), translation)
+        self.formatter.set_space_placement('After Output')
+        for steno in (
+            # 'TEFT',
+            'T*', 'E*', 'S*', 'T*',
+            '*' ,  '*',  '*',  '*',
+        ):
+            stroke = steno_to_stroke(steno)
+            self.translator.translate(stroke)
+        self.assertEqual(self.output.text, u'')
+
     def test_bug557(self):
         # Using the asterisk key to delete letters in fingerspelled words
         # occasionally causes problems when the space placement is set to

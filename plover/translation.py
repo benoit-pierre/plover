@@ -16,7 +16,6 @@ emits one or more Translation objects based on a greedy conversion algorithm.
 
 """
 
-import itertools
 import sys
 import re
 
@@ -106,7 +105,8 @@ class Translation(object):
         else:
             translation = escape_translation(self.english)
             translation = '"%s"' % translation.replace('"', r'\"')
-        return 'Translation(%s : %s)' % (self.rtfcre, translation)
+        return '%s:%s' % ('/'.join(self.rtfcre), translation)
+        # return 'Translation(%u, %s: %s -[%s])' % (id(self), self.rtfcre, translation, self.replaced)
 
     def __repr__(self):
         return str(self)
@@ -122,6 +122,8 @@ class Translation(object):
         # TODO: combos are not undoable but in some contexts they appear as text. 
         # Should we provide a way to undo those? or is backspace enough?
         if not self.formatting:
+            return True
+        if self.replaced:
             return True
         for a in self.formatting:
             if a.text or a.replace:
@@ -168,7 +170,18 @@ class Translator(object):
 
     def translate(self, stroke):
         """Process a single stroke."""
+        self._undo = []
+        self._todo = 0
         self._translate_stroke(stroke)
+        if self._undo or self._todo:
+            if self._todo:
+                prev = self._state.prev(self._todo)
+                do = self._state.translations[-self._todo:]
+            else:
+                prev = self._state.prev()
+                do = []
+            self._output(self._undo, do, prev)
+        self._undo = self._todo = None
         self._resize_translations()
 
     def set_dictionary(self, d):
@@ -243,102 +256,113 @@ class Translator(object):
 
         """
 
-        undo = []
-        do = []
-        add_to_history = True
-
         # TODO: Test the behavior of undoing until a translation is undoable.
         if stroke.is_correction:
-            empty = True
             for t in reversed(self._state.translations):
-                undo.append(t)
+                self._undo_last()
                 if t.has_undo():
-                    empty = False
-                    break
-            undo.reverse()
-            for t in undo:
-                do.extend(t.replaced)
-            if empty:
-                # There is no more buffer to delete from -- remove undo and add a
-                # stroke that removes last word on the user's OS, but don't add it
-                # to the state history.
-                add_to_history = False
-                do = [Translation([stroke], _back_string())]
-        else:
-            mapping = self._lookup([stroke])
+                    self._do_translations(*t.replaced)
+                    return
+            # There is no more buffer to delete from -- remove undo and add a
+            # stroke that removes last word on the user's OS, but don't add it
+            # to the state history.
+            self._output([], [Translation([stroke], _back_string())], None)
+            return
 
-            if mapping == '{*}':
-                # Toggle asterisk of previous stroke
-                new_stroke = _toggle_asterisk(self._state.translations, undo, do)
-                if new_stroke is not None:
-                    stroke = new_stroke
-                    mapping = self._lookup([stroke])
+        mapping = self._lookup([stroke])
 
-            elif mapping == '{*+}':
-                # Repeat last stroke
-                new_stroke = _repeat_last_stroke(self._state.translations)
-                if new_stroke is not None:
-                    stroke = new_stroke
-                    mapping = self._lookup([stroke])
+        if self._translate_macro(stroke, mapping):
+            return
 
-            t = self._find_translation(stroke, mapping)
-            if t is not None:
-                do.append(t)
-                undo.extend(t.replaced)
-        del self._state.translations[len(self._state.translations) - len(undo):]
-        self._output(undo, do, self._state.prev())
-        if add_to_history:
-            self._state.translations.extend(do)
+        t = (
+            self._find_translation_helper(stroke) or
+            self._find_translation_helper(stroke, system.SUFFIX_KEYS) or
+            Translation([stroke], mapping)
+        )
+        self._translate_translation(t)
 
-    def _find_translation(self, stroke, mapping):
-        t = self._find_translation_helper(stroke)
-        if t:
-            return t
+    def _translate_macro(self, stroke, mapping):
+
+        translations = self._state.translations
+
+        if mapping == '{*}':
+            # Toggle asterisk of previous stroke
+            if not translations:
+                return True
+            t = translations[-1]
+            self._undo_last()
+            self._do_translations(*t.replaced)
+            keys = set(t.strokes[-1].steno_keys)
+            if '*' in keys:
+                keys.remove('*')
+            else:
+                keys.add('*')
+            self._translate_stroke(Stroke(keys))
+            return True
+
+        if mapping == '{*+}':
+            # Repeat last stroke
+            if not translations:
+                return True
+            stroke = Stroke(translations[-1].strokes[-1].steno_keys)
+            self._translate_stroke(stroke)
+            return True
 
         if mapping == '{*?}':
             # Retrospective insert space
-            replaced = self._state.translations[-1:]
-            if len(replaced) < 1:
-                return
-            if replaced[0].is_retrospective_command:
-                return
-            lookup_stroke = replaced[0].strokes[-1]
-            english = []
-            for t in replaced:
-                for r in t.replaced:
-                    english.append(r.english or r.rtfcre[0])
-            if len(english) > 0:
+            if not translations:
+                return True
+            replaced = translations[-1]
+            if replaced.is_retrospective_command:
+                return True
+            lookup_stroke = replaced.strokes[-1]
+            english = [t.english or '/'.join(t.rtfcre)
+                       for t in replaced.replaced]
+            if english:
                 english.append(self._lookup([lookup_stroke]) or lookup_stroke.rtfcre)
                 t = Translation([stroke], ' '.join(english))
-                t.replaced = replaced
+                t.replaced = [replaced]
                 t.is_retrospective_command = True
-                return t
+                self._translate_translation(t)
+            return True
 
         if mapping == '{*!}':
             # Retrospective delete space
-            replaced = self._state.translations[-2:]
-            if len(replaced) < 2:
-                return
+            if len(translations) < 2:
+                return True
+            replaced = translations[-2:]
             if replaced[1].is_retrospective_command:
-                return
+                return True
             english = []
             for t in replaced:
                 if t.english is not None:
                     english.append(t.english)
-                elif len(t.rtfcre) is 1 and t.rtfcre[0].isdigit():
+                elif len(t.rtfcre) == 1 and t.rtfcre[0].isdigit():
                     english.append('{&%s}' % t.rtfcre[0])
             if len(english) > 1:
                 t = Translation([stroke], '{^~|^}'.join(english))
                 t.replaced = replaced
                 t.is_retrospective_command = True
-                return t
+                self._translate_translation(t)
+            return True
 
-        if mapping is not None:  # Could be the empty string.
-            return Translation([stroke], mapping)
-        t = self._find_translation_helper(stroke, system.SUFFIX_KEYS)
-        if t:
-            return t
-        return Translation([stroke], self._lookup([stroke], system.SUFFIX_KEYS))
+        return False
+
+    def _translate_translation(self, t):
+        self._undo_last(len(t.replaced))
+        self._do_translations(t)
+
+    def _undo_last(self, count=1):
+        for n in range(count):
+            t = self._state.translations.pop(n - count)
+            if self._todo:
+                self._todo -= 1
+            else:
+                self._undo.append(t)
+
+    def _do_translations(self, *translations):
+        self._state.translations.extend(translations)
+        self._todo += len(translations)
 
     def _find_translation_helper(self, stroke, suffixes=()):
         # Figure out how much of the translation buffer can be involved in this
@@ -355,12 +379,12 @@ class Translator(object):
         # The new stroke can either create a new translation or replace
         # existing translations by matching a longer entry in the
         # dictionary.
-        for i in range(len(translations)):
+        for i in range(len(translations)+1):
             replaced = translations[i:]
-            strokes = list(itertools.chain(*[t.strokes for t in replaced]))
+            strokes = [s for t in replaced for s in t.strokes]
             strokes.append(stroke)
             mapping = self._lookup(strokes, suffixes)
-            if mapping != None:
+            if mapping is not None:
                 t = Translation(strokes, mapping)
                 t.replaced = replaced
                 return t
@@ -368,7 +392,7 @@ class Translator(object):
     def _lookup(self, strokes, suffixes=()):
         dict_key = tuple(s.rtfcre for s in strokes)
         result = self._dictionary.lookup(dict_key)
-        if result != None:
+        if result is not None:
             return result
 
         for key in suffixes:
@@ -404,14 +428,17 @@ class _State(object):
         self.translations = []
         self.tail = None
 
-    def prev(self):
+    def prev(self, count=None):
         """Get the most recent translations."""
-        if self.translations:
-            return self.translations
+        if count is not None:
+            prev = self.translations[:-count]
+        else:
+            prev = self.translations
+        if prev:
+            return prev
         if self.tail is not None:
             return [self.tail]
         return None
-
 
     def restrict_size(self, n):
         """Reduce the history of translations to n."""
@@ -437,29 +464,3 @@ def _back_string():
         else:
             _back_string.mapping = '{#Control_L(BackSpace)}{^}'
     return _back_string.mapping
-
-def _toggle_asterisk(translations, undo, do):
-    replaced = translations[len(translations)-1:]
-    if len(replaced) < 1:
-        return
-    undo.extend(replaced)
-    redo = replaced[0].replaced
-    do.extend(redo)
-    translations.remove(replaced[0])
-    translations.extend(redo)
-    last_stroke = replaced[0].strokes[len(replaced[0].strokes)-1]
-    keys = last_stroke.steno_keys[:]
-    if '*' in keys:
-        keys.remove('*')
-    else:
-        keys.append('*')
-    return Stroke(keys)
-
-def _repeat_last_stroke(translations):
-    replaced = translations[len(translations)-1:]
-    if len(replaced) < 1:
-        return
-    last_stroke = replaced[0].strokes[len(replaced[0].strokes)-1]
-    keys = last_stroke.steno_keys[:]
-    return Stroke(keys)
-
