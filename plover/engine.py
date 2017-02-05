@@ -246,15 +246,16 @@ class StenoEngine(object):
         # The first commands can be used whether plover has output enabled or not.
         if command == 'RESUME':
             self._set_output(True)
-            return True
+            return True, ''
         elif command == 'TOGGLE':
             self._toggle_output()
-            return True
+            return True, ''
         elif command == 'QUIT':
             self._trigger_hook('quit')
-            return True
+            return True, ''
         if not self._is_running:
-            return False
+            return False, ''
+        text = ''
         # These commands can only be run when plover has output enabled.
         if command == 'SUSPEND':
             self._set_output(False)
@@ -269,8 +270,8 @@ class StenoEngine(object):
         else:
             command_args = command.split(':', 2)
             command_fn = registry.get_plugin('command', command_args[0]).resolve()
-            command_fn(self, command_args[1] if len(command_args) == 2 else '')
-        return False
+            text = command_fn(self, command_args[1] if len(command_args) == 2 else '')
+        return False, text
 
     def _on_stroked(self, steno_keys):
         stroke = Stroke(steno_keys)
@@ -302,10 +303,11 @@ class StenoEngine(object):
         self._trigger_hook('send_key_combination', c)
 
     def send_engine_command(self, command):
-        suppress = not self._is_running
-        suppress &= self._consume_engine_command(command)
-        if suppress:
+        is_running = self._is_running
+        suppress, text = self._consume_engine_command(command)
+        if not is_running and suppress:
             self._machine.suppress_last_stroke(self._keyboard_emulation.send_backspaces)
+        return text
 
     def toggle_output(self):
         self._same_thread_hook(self._toggle_output)

@@ -28,6 +28,7 @@ class CaptureOutput(object):
         
     def send_engine_command(self, c):
         self.instructions.append(('e', c))
+        return ''
 
 class MockTranslation(object):
     def __init__(self, rtfcre=tuple(), english=None, formatting=None):

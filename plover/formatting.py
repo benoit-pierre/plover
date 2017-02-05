@@ -200,7 +200,9 @@ class OutputHelper(object):
                 self.output.send_key_combination(a.combo)
             if a.command:
                 self.commit()
-                self.output.send_engine_command(a.command)
+                text = self.output.send_engine_command(a.command)
+                a.text += text
+                self.after += text
         self.commit()
 
 
