@@ -33,7 +33,6 @@ class CaptureOutput(object):
 def steno_to_stroke(steno):
     stroke = Stroke(())
     stroke.rtfcre = steno
-    stroke.is_correction = steno == '*'
     return stroke
 
 
@@ -54,7 +53,7 @@ class BlackboxTest(unittest.TestCase):
         # according to its dictionary longest key does no affect things
         # like the restrospective repeate-last-stroke command.
         self.dictionary.set(('TEFT',), 'test')
-        self.dictionary.set(('R*S',), '{*+}')
+        self.dictionary.set(('R*S',), '=repeat_last_stroke')
         # Note: the implementation of repeat-last-stroke looks at the last
         # stroke keys, so we can't use the same trick as for other tests.
         for keys in (
@@ -79,7 +78,7 @@ class BlackboxTest(unittest.TestCase):
     def test_bug471(self):
         # Repeat-last-stroke after typing two numbers outputs the numbers
         # reversed for some combos.
-        self.dictionary.set(('R*S',), '{*+}')
+        self.dictionary.set(('R*S',), '=repeat_last_stroke')
         # Note: the implementation of repeat-last-stroke looks at the last
         # stroke keys, so we can't use the same trick as for other tests.
         for keys in (
@@ -140,7 +139,7 @@ class BlackboxTest(unittest.TestCase):
 
     def test_undo_fingerspelling(self):
         for steno, translation in (
-            # ('TEFT', 'test'),
+            ('*',  '=undo'  ),
             ('T*', '{>}{&t}'),
             ('E*', '{>}{&e}'),
             ('S*', '{>}{&s}'),
@@ -149,7 +148,6 @@ class BlackboxTest(unittest.TestCase):
             self.dictionary.set(normalize_steno(steno), translation)
         self.formatter.set_space_placement('After Output')
         for steno in (
-            # 'TEFT',
             'T*', 'E*', 'S*', 'T*',
             '*' ,  '*',  '*',  '*',
         ):
@@ -162,6 +160,7 @@ class BlackboxTest(unittest.TestCase):
         # occasionally causes problems when the space placement is set to
         # "After Output".
         for steno, translation in (
+            ('*'       , '=undo'  ),
             ('EU'      , 'I'      ),
             ('HRAOEUBG', 'like'   ),
             ('T*'      , '{>}{&t}'),
@@ -187,6 +186,7 @@ class BlackboxTest(unittest.TestCase):
         # occasionally causes problems when the space placement is set to
         # "After Output".
         for steno, translation in (
+            ('*'       , '=undo'  ),
             ('EU'      , 'I'      ),
             ('HRAOEUBG', 'like'   ),
             ('T*'      , '{>}{&t}'),
@@ -213,6 +213,7 @@ class BlackboxTest(unittest.TestCase):
         # occasionally causes problems when the space placement is set to
         # "After Output".
         for steno, translation in (
+            ('*'       , '=undo'  ),
             ('EU'      , 'I'      ),
             ('HRAOEUBG', 'like'   ),
             ('T*'      , '{-|}{&t}'),
@@ -265,3 +266,16 @@ class BlackboxTest(unittest.TestCase):
             stroke = steno_to_stroke(steno)
             self.translator.translate(stroke)
         self.assertEqual(self.output.text, u'\n\t')
+
+    def test_undo_last_undoable(self):
+        self.dictionary.set(('*',), '=undo')
+        self.dictionary.set(('TEFT',), 'test')
+        self.dictionary.set(('PHROPB',), '{PLOVER:RESUME}')
+        for steno in (
+            'TEFT',
+            'PHROPB',
+            '*',
+        ):
+            stroke = steno_to_stroke(steno)
+            self.translator.translate(stroke)
+        self.assertEqual(self.output.text, u'')

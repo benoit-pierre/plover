@@ -459,6 +459,13 @@ if __name__ == '__main__':
         TX Bolt   = plover.machine.txbolt:TxBolt
         Treal     = plover.machine.treal:Treal
 
+        [plover.macro]
+        repeat_last_stroke            = plover.macro.repeat:last_stroke
+        retrospective_delete_space    = plover.macro.retrospective:delete_space
+        retrospective_insert_space    = plover.macro.retrospective:insert_space
+        retrospective_toggle_asterisk = plover.macro.retrospective:toggle_asterisk
+        undo                          = plover.macro.undo:undo
+
         [plover.system]
         English Stenotype = plover.system.english_stenotype
 

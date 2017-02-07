@@ -21,6 +21,7 @@ import re
 
 from plover.steno import Stroke
 from plover.steno_dictionary import StenoDictionaryCollection
+from plover.registry import registry
 from plover import system
 
 
@@ -256,22 +257,9 @@ class Translator(object):
 
         """
 
-        # TODO: Test the behavior of undoing until a translation is undoable.
-        if stroke.is_correction:
-            for t in reversed(self._state.translations):
-                self._undo_last()
-                if t.has_undo():
-                    self._do_translations(*t.replaced)
-                    return
-            # There is no more buffer to delete from -- remove undo and add a
-            # stroke that removes last word on the user's OS, but don't add it
-            # to the state history.
-            self._output([], [Translation([stroke], _back_string())], None)
-            return
-
         mapping = self._lookup([stroke])
-
-        if self._translate_macro(stroke, mapping):
+        if mapping is not None and mapping.startswith('='):
+            self._translate_macro(mapping[1:], stroke)
             return
 
         t = (
@@ -281,72 +269,9 @@ class Translator(object):
         )
         self._translate_translation(t)
 
-    def _translate_macro(self, stroke, mapping):
-
-        translations = self._state.translations
-
-        if mapping == '{*}':
-            # Toggle asterisk of previous stroke
-            if not translations:
-                return True
-            t = translations[-1]
-            self._undo_last()
-            self._do_translations(*t.replaced)
-            keys = set(t.strokes[-1].steno_keys)
-            if '*' in keys:
-                keys.remove('*')
-            else:
-                keys.add('*')
-            self._translate_stroke(Stroke(keys))
-            return True
-
-        if mapping == '{*+}':
-            # Repeat last stroke
-            if not translations:
-                return True
-            stroke = Stroke(translations[-1].strokes[-1].steno_keys)
-            self._translate_stroke(stroke)
-            return True
-
-        if mapping == '{*?}':
-            # Retrospective insert space
-            if not translations:
-                return True
-            replaced = translations[-1]
-            if replaced.is_retrospective_command:
-                return True
-            lookup_stroke = replaced.strokes[-1]
-            english = [t.english or '/'.join(t.rtfcre)
-                       for t in replaced.replaced]
-            if english:
-                english.append(self._lookup([lookup_stroke]) or lookup_stroke.rtfcre)
-                t = Translation([stroke], ' '.join(english))
-                t.replaced = [replaced]
-                t.is_retrospective_command = True
-                self._translate_translation(t)
-            return True
-
-        if mapping == '{*!}':
-            # Retrospective delete space
-            if len(translations) < 2:
-                return True
-            replaced = translations[-2:]
-            if replaced[1].is_retrospective_command:
-                return True
-            english = []
-            for t in replaced:
-                if t.english is not None:
-                    english.append(t.english)
-                elif len(t.rtfcre) == 1 and t.rtfcre[0].isdigit():
-                    english.append('{&%s}' % t.rtfcre[0])
-            if len(english) > 1:
-                t = Translation([stroke], '{^~|^}'.join(english))
-                t.replaced = replaced
-                t.is_retrospective_command = True
-                self._translate_translation(t)
-            return True
-
-        return False
+    def _translate_macro(self, macro_name, stroke):
+        macro_fn = registry.get_plugin('macro', macro_name).resolve()
+        macro_fn(self, stroke)
 
     def _translate_translation(self, t):
         self._undo_last(len(t.replaced))
@@ -453,14 +378,3 @@ class _State(object):
         if translation_index:
             self.tail = self.translations[translation_index - 1]
         del self.translations[:translation_index]
-
-
-def _back_string():
-    # Provides the correct translation to undo a word
-    # depending on the operating system and stores it
-    if 'mapping' not in _back_string.__dict__:
-        if sys.platform.startswith('darwin'):
-            _back_string.mapping = '{#Alt_L(BackSpace)}{^}'
-        else:
-            _back_string.mapping = '{#Control_L(BackSpace)}{^}'
-    return _back_string.mapping

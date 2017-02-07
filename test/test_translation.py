@@ -231,6 +231,7 @@ class TranslatorTestCase(unittest.TestCase):
                 del self._output[:]
                 
         d = StenoDictionary()        
+        d[('*',)] = '=undo'
         out = Output()        
         t = Translator()
         dc = StenoDictionaryCollection()
@@ -314,6 +315,7 @@ class TranslatorTestCase(unittest.TestCase):
         self.assertEqual(out.get(), '')
         
         d.clear()
+        d[('*',)] = '=undo'
 
         s = stroke('S')
         t.translate(s)
@@ -546,17 +548,20 @@ class TranslateStrokeTestCase(unittest.TestCase):
         self.assertEqual(self.o.output.do[0].replaced, self.lt('S/T'))
 
     def test_undo(self):
+        self.define('*', '=undo')
         self.s.translations = self.lt('POP')
         self.translate(stroke('*'))
         self.assertTranslations([])
         self.assertOutput(self.lt('POP'), [], None)
 
     def test_empty_undo(self):
+        self.define('*', '=undo')
         self.translate(stroke('*'))
         self.assertTranslations([])
         self.assertOutput([], [Translation([Stroke('*')], _back_string())], None)
 
     def test_undo_translation(self):
+        self.define('*', '=undo')
         self.define('P/P', 'pop')
         self.translate(stroke('P'))
         self.translate(stroke('P'))
@@ -565,6 +570,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
         self.assertOutput(self.lt('P/P'), self.lt('P'), None)
 
     def test_undo_longer_translation(self):
+        self.define('*', '=undo')
         self.define('P/P/-D', 'popped')
         self.translate(stroke('P'))
         self.translate(stroke('P'))
@@ -574,11 +580,12 @@ class TranslateStrokeTestCase(unittest.TestCase):
         self.assertOutput(self.lt('P/P/-D'), self.lt('P P'), None)
 
     def test_undo_tail(self):
+        self.define('*', '=undo')
         self.s.tail = self.t('T/A/I/L')
         self.translate(stroke('*'))
         self.assertTranslations([])
         self.assertOutput([], [Translation([Stroke('*')], _back_string())], None)
-        
+
     def test_suffix_folding(self):
         self.define('K-L', 'look')
         self.define('-G', '{^ing}')
@@ -624,7 +631,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
         self.define('PER', 'perfect')
         self.define('SWAEUGS', 'situation')
         self.define('PER/SWAEUGS', 'persuasion')
-        self.define('SP*', '{*?}')
+        self.define('SP*', '=retrospective_insert_space')
         self.translate(stroke('PER'))
         self.translate(stroke('SWAEUGS'))
         self.translate(stroke('SP*'))
@@ -642,7 +649,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
         # Should work when beginning or ending strokes aren't defined
         self.define('T/E/S/T', 'a longer key')
         self.define('STWR/STWR', 'test')
-        self.define('SP*', '{*?}')
+        self.define('SP*', '=retrospective_insert_space')
         self.translate(stroke('STWR'))
         self.translate(stroke('STWR'))
         self.translate(stroke('SP*'))
@@ -660,7 +667,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
         self.define('T/E/S/T', 'a longer key')
         self.define('K', 'kick')
         self.define('B', 'back')
-        self.define('SP*', '{*!}')
+        self.define('SP*', '=retrospective_delete_space')
         self.translate(stroke('K'))
         self.translate(stroke('B'))
         self.translate(stroke('SP*'))
@@ -675,7 +682,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
     def test_retrospective_delete_space_with_number(self):
         self.define('T/E/S/T', 'a longer key')
         self.define('U', 'user')
-        self.define('SP*', '{*!}')
+        self.define('SP*', '=retrospective_delete_space')
         self.translate(stroke('U'))
         self.translate(stroke('1-'))
         self.translate(stroke('SP*'))
@@ -691,7 +698,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
         self.define('T/E/S/T', 'a longer key')
         self.define('P-P', '{.}')
         self.define('SH*', 'zshrc')
-        self.define('SP*', '{*!}')
+        self.define('SP*', '=retrospective_delete_space')
         self.translate(stroke('P-P'))
         self.translate(stroke('SH*'))
         self.translate(stroke('SP*'))
@@ -707,14 +714,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
         self.define('T/E/S/T', 'a longer key')
         self.define('S', 'see')
         self.define('S*', 'sea')
-        self.define('A*', '{*}')
-        self.translate(stroke('S'))
-        self.translate(stroke('A*'))
-        self.assertTranslations(self.lt('S*'))
-        self.assertOutput(self.lt('S'), self.lt('S*'), None)
-
-    def test_retrospective_toggle_empty(self):
-        self.define('A*', '{*}')
+        self.define('A*', '=retrospective_toggle_asterisk')
         self.translate(stroke('A*'))
         self.assertTranslations(self.lt(''))
         self.assertEqual(self.o.output, [])
@@ -724,7 +724,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
         self.define('SKEL', 'cancel')
         self.define('SKEL/TO-PB', 'skeleton')
         self.define('SKEL/TO*PB', 'not skeleton!')
-        self.define('A*', '{*}')
+        self.define('A*', '=retrospective_toggle_asterisk')
         self.translate(stroke('P-P'))
         self.translate(stroke('SKEL'))
         self.translate(stroke('TO-PB'))
@@ -739,7 +739,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
         self.define('SKEL', 'cancel')
         self.define('SKEL/TO-PB', 'skeleton')
         self.define('TO*PB', '{^ton}')
-        self.define('A*', '{*}')
+        self.define('A*', '=retrospective_toggle_asterisk')
         self.translate(stroke('P-P'))
         self.translate(stroke('SKEL'))
         self.translate(stroke('TO-PB'))
@@ -752,7 +752,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
     def test_repeat_last_stroke1(self):
         self.define('T/E/S/T', 'a longer key')
         self.define('TH', 'this')
-        self.define('R*', '{*+}')
+        self.define('R*', '=repeat_last_stroke')
         self.translate(stroke('TH'))
         self.translate(stroke('R*'))
         undo = []
@@ -764,7 +764,7 @@ class TranslateStrokeTestCase(unittest.TestCase):
     def test_repeat_last_stroke2(self):
         self.define('T/E/S/T', 'a longer key')
         self.define('THA', 'that')
-        self.define('R*', '{*+}')
+        self.define('R*', '=repeat_last_stroke')
         self.translate(stroke('THA'))
         self.translate(stroke('R*'))
         undo = []

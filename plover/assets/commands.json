@@ -1,4 +1,5 @@
 {
+"*": "=undo",
 "KHR*BG": "{#Control_L(k)}",
 "KHR*F": "{#Control_L(v)}",
 "KHR*T": "{#Control_L(w)}",
