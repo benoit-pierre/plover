@@ -1,6 +1,7 @@
 
 import unittest
 
+from plover import log
 from plover import system
 from plover.config import DEFAULT_SYSTEM_NAME
 from plover.registry import registry
@@ -26,6 +27,8 @@ class TestCase(unittest.TestCase):
         return ContextManager()
 
 
+# More traces for easier debugging.
+log.set_level(log.DEBUG)
 # Setup registry.
 registry.update()
 # Setup default system.
