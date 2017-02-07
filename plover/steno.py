@@ -94,6 +94,9 @@ class Stroke(object):
 
         self.steno_keys = steno_keys
 
+    def __hash__(self):
+        return hash(self.rtfcre)
+
     def __str__(self):
         return 'Stroke(%s : %s)' % (self.rtfcre, self.steno_keys)
 
