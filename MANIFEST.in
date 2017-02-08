@@ -21,6 +21,7 @@ include plover/gui_qt/messages/plover.pot
 include plover/gui_qt/resources/*.png
 include plover/gui_qt/resources/*.qrc
 include plover/gui_qt/resources/*.svg
+include plover/stroke.pyx
 include plover_build_utils/*.sh
 include pyproject.toml
 include requirements*.txt
@@ -33,6 +34,7 @@ include tox.ini
 include windows/*
 # Exclude: CI/Git/GitHub specific files,
 # as well as generated Python files (UI).
+recursive-exclude plover *.c
 exclude *.yml
 exclude .gitignore
 exclude archlinux/.gitignore

@@ -1,6 +1,5 @@
 
 from plover.translation import Translation
-from plover.steno import Stroke
 from plover import system
 
 
@@ -11,12 +10,12 @@ def toggle_asterisk(translator, stroke, cmdline):
         return
     t = translations[-1]
     translator.untranslate_translation(t)
-    keys = set(t.strokes[-1].steno_keys)
-    if '*' in keys:
-        keys.remove('*')
+    toggled_stroke = t.strokes[-1]
+    if '*' in toggled_stroke:
+        toggled_stroke -= '*'
     else:
-        keys.add('*')
-    translator.translate_stroke(Stroke(keys))
+        toggled_stroke += '*'
+    translator.translate_stroke(toggled_stroke)
 
 def delete_space(translator, stroke, cmdline):
     # Retrospective delete space

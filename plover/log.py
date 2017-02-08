@@ -166,7 +166,7 @@ class Logger:
     def log_stroke(self, stroke):
         if not self._log_strokes or self._stroke_handler is None:
             return
-        self._stroke_logger.info('%s', stroke)
+        self._stroke_logger.info('%r', stroke)
 
     def log_translation(self, undo, do, prev):
         if not self._log_translations or self._stroke_handler is None:

@@ -66,9 +66,15 @@ class DictionaryItemModel(QAbstractTableModel):
         self._entries = []
         for dictionary in self._dictionary_list:
             for strokes, translation in dictionary.items():
-                if strokes_filter is not None and \
-                   not '/'.join(strokes).startswith(strokes_filter):
-                    continue
+                if strokes_filter:
+                    if len(strokes_filter) > len(strokes):
+                        continue
+                    if strokes_filter[:-1] != strokes[:len(strokes_filter)-1]:
+                        continue
+                    filter_last_stroke = strokes_filter[-1]
+                    last_stroke = strokes[len(strokes_filter)-1]
+                    if filter_last_stroke and not last_stroke.startswith(filter_last_stroke):
+                        continue
                 if translation_filter is not None and \
                    not translation.startswith(translation_filter):
                     continue
@@ -171,7 +177,7 @@ class DictionaryItemModel(QAbstractTableModel):
         item = self._entries[index.row()]
         column = index.column()
         if column == _COL_STENO:
-            return '/'.join(item.strokes)
+            return '/'.join(map(str, item.strokes))
         if column == _COL_TRANS:
             return escape_translation(item.translation)
         if column == _COL_DICT:
@@ -304,6 +310,7 @@ class DictionaryEditor(QDialog, Ui_DictionaryEditor, WindowState):
                                      color: %s;
                                 }''' % (background, text_color))
         self.table.setFocus()
+        self._filter = (None, None)
         for action in (
             self.action_Undo,
             self.action_Delete,
@@ -367,14 +374,24 @@ class DictionaryEditor(QDialog, Ui_DictionaryEditor, WindowState):
 
     def on_apply_filter(self):
         self.table.selectionModel().clear()
-        strokes_filter = '/'.join(normalize_steno(self.strokes_filter.text().strip()))
-        translation_filter = unescape_translation(self.translation_filter.text().strip())
+        strokes_filter = self.strokes_filter.text().strip()
+        strokes_filter = (normalize_steno(strokes_filter)
+                          if strokes_filter else None)
+        translation_filter = self.translation_filter.text().strip()
+        translation_filter = (unescape_translation(translation_filter)
+                              if translation_filter else None)
+        if self._filter == (strokes_filter, translation_filter):
+            return
+        self._filter = (strokes_filter, translation_filter)
         self._model.filter(strokes_filter=strokes_filter,
                            translation_filter=translation_filter)
 
     def on_clear_filter(self):
         self.strokes_filter.setText('')
         self.translation_filter.setText('')
+        if self._filter == (None, None):
+            return
+        self._filter = (None, None)
         self._model.filter(strokes_filter=None, translation_filter=None)
 
     def on_finished(self, result):

@@ -11,9 +11,8 @@ import sys
 from plover.steno_dictionary import StenoDictionary, StenoDictionaryCollection
 from plover.translation import Translation, Translator, _State
 from plover.translation import escape_translation, unescape_translation
-from plover.steno import Stroke, normalize_steno
-
-from plover_build_utils.testing import steno_to_stroke as stroke
+from plover.steno import normalize_steno
+from plover import system
 
 from . import parametrize
 
@@ -25,14 +24,14 @@ else:
 
 
 def test_no_translation():
-    t = Translation([stroke('S'), stroke('T')], None)
-    assert t.strokes == [stroke('S'), stroke('T')]
+    t = Translation([system.Stroke('S'), system.Stroke('T')], None)
+    assert t.strokes == [system.Stroke('S'), system.Stroke('T')]
     assert t.rtfcre == ('S', 'T')
     assert t.english is None
 
 def test_translation():
-    t = Translation([stroke('S'), stroke('T')], 'translation')
-    assert t.strokes == [stroke('S'), stroke('T')]
+    t = Translation([system.Stroke('S'), system.Stroke('T')], 'translation')
+    assert t.strokes == [system.Stroke('S'), system.Stroke('T')]
     assert t.rtfcre == ('S', 'T')
     assert t.english == 'translation'
 
@@ -96,7 +95,7 @@ class TestTranslatorStateSize:
         self._check_size_call(7)
 
     def test_translation_calls_restrict(self):
-        self.t.translate(stroke('S'))
+        self.t.translate(system.Stroke('S'))
         self._check_size_call(0)
 
 
@@ -110,7 +109,7 @@ def test_listeners():
         output2.append((undo, do, prev))
 
     t = Translator()
-    s = stroke('S')
+    s = system.Stroke('S')
     tr = Translation([s], None)
     expected_output = [([], [tr], [tr])]
 
@@ -155,38 +154,38 @@ def test_changing_state():
         output.append((undo, do, prev))
 
     d = StenoDictionary()
-    d[('S', 'P')] = 'hi'
+    d[normalize_steno('S/P')] = 'hi'
     dc = StenoDictionaryCollection([d])
     t = Translator()
     t.set_dictionary(dc)
-    t.translate(stroke('T'))
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('T'))
+    t.translate(system.Stroke('S'))
     s = copy.deepcopy(t.get_state())
 
     t.add_listener(listener)
 
-    expected = [([Translation([stroke('S')], None)],
-                 [Translation([stroke('S'), stroke('P')], 'hi')],
-                 [Translation([stroke('T')], None)])]
-    t.translate(stroke('P'))
+    expected = [([Translation([system.Stroke('S')], None)],
+                 [Translation([system.Stroke('S'), system.Stroke('P')], 'hi')],
+                 [Translation([system.Stroke('T')], None)])]
+    t.translate(system.Stroke('P'))
     assert output == expected
 
     del output[:]
     t.set_state(s)
-    t.translate(stroke('P'))
+    t.translate(system.Stroke('P'))
     assert output == expected
 
     del output[:]
     t.clear_state()
-    t.translate(stroke('P'))
-    assert output == [([], [Translation([stroke('P')], None)], None)]
+    t.translate(system.Stroke('P'))
+    assert output == [([], [Translation([system.Stroke('P')], None)], None)]
 
     del output[:]
     t.set_state(s)
-    t.translate(stroke('P'))
+    t.translate(system.Stroke('P'))
     assert output == [([],
-                       [Translation([stroke('P')], None)],
-                       [Translation([stroke('S'), stroke('P')], 'hi')])]
+                       [Translation([system.Stroke('P')], None)],
+                       [Translation([system.Stroke('S'), system.Stroke('P')], 'hi')])]
 
 
 def test_translator():
@@ -222,90 +221,90 @@ def test_translator():
     t.set_dictionary(dc)
     t.add_listener(out.write)
 
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('S'))
     assert out.get() == 'S'
-    t.translate(stroke('T'))
+    t.translate(system.Stroke('T'))
     assert out.get() == 'S T'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 'S'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     # Undo buffer ran out
     assert out.get() == 'S ' + BACK_STRING
 
     t.set_min_undo_length(3)
     out.clear()
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('S'))
     assert out.get() == 'S'
-    t.translate(stroke('T'))
+    t.translate(system.Stroke('T'))
     assert out.get() == 'S T'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 'S'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == ''
 
     out.clear()
-    d[('S',)] = 't1'
-    d[('T',)] = 't2'
-    d[('S', 'T')] = 't3'
+    d[normalize_steno('S')] = 't1'
+    d[normalize_steno('T')] = 't2'
+    d[normalize_steno('S/T')] = 't3'
 
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('S'))
     assert out.get() == 't1'
-    t.translate(stroke('T'))
+    t.translate(system.Stroke('T'))
     assert out.get() == 't3'
-    t.translate(stroke('T'))
+    t.translate(system.Stroke('T'))
     assert out.get() == 't3 t2'
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('S'))
     assert out.get() == 't3 t2 t1'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 't3 t2'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 't3'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 't1'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == ''
 
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('S'))
     assert out.get() == 't1'
-    t.translate(stroke('T'))
+    t.translate(system.Stroke('T'))
     assert out.get() == 't3'
-    t.translate(stroke('T'))
+    t.translate(system.Stroke('T'))
     assert out.get() == 't3 t2'
 
-    d[('S', 'T', 'T')] = 't4'
-    d[('S', 'T', 'T', 'S')] = 't5'
+    d[normalize_steno('S/T/T')] = 't4'
+    d[normalize_steno('S/T/T/S')] = 't5'
 
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('S'))
     assert out.get() == 't5'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 't3 t2'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 't3'
-    t.translate(stroke('T'))
+    t.translate(system.Stroke('T'))
     assert out.get() == 't4'
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('S'))
     assert out.get() == 't5'
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('S'))
     assert out.get() == 't5 t1'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 't5'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 't4'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 't3'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == 't1'
-    t.translate(stroke('*'))
+    t.translate(system.Stroke('*'))
     assert out.get() == ''
 
     d.clear()
 
-    s = stroke('S')
+    s = system.Stroke('S')
     t.translate(s)
     t.translate(s)
     t.translate(s)
     t.translate(s)
-    s = stroke('*')
+    s = system.Stroke('*')
     t.translate(s)
     t.translate(s)
     t.translate(s)
@@ -315,16 +314,16 @@ def test_translator():
 
     out.clear()
     t.remove_listener(out.write)
-    t.translate(stroke('S'))
+    t.translate(system.Stroke('S'))
     assert out.get() == ''
 
 
 class TestState:
 
     def setup_method(self):
-        self.a = Translation([stroke('S')], None)
-        self.b = Translation([stroke('T'), stroke('-D')], None)
-        self.c = Translation([stroke('-Z'), stroke('P'), stroke('T*')], None)
+        self.a = Translation([system.Stroke('S')], None)
+        self.b = Translation([system.Stroke('T'), system.Stroke('-D')], None)
+        self.c = Translation([system.Stroke('-Z'), system.Stroke('P'), system.Stroke('T*')], None)
 
     def test_prev_list0(self):
         s = _State()
@@ -421,10 +420,9 @@ class TestTranslateStroke:
 
     def t(self, strokes):
         """A quick way to make a translation."""
-        strokes = [stroke(x) for x in strokes.split('/')]
-        key = tuple(s.rtfcre for s in strokes)
+        key = normalize_steno(strokes)
         translation = self.dc.lookup(key)
-        return Translation(strokes, translation)
+        return Translation(list(key), translation)
 
     def lt(self, translations):
         """A quick way to make a list of translations."""
@@ -435,7 +433,7 @@ class TestTranslateStroke:
         self.d[key] = value
 
     def translate(self, steno):
-        self.tlor.translate(stroke(steno))
+        self.tlor.translate(system.Stroke(steno))
 
     def _check_translations(self, expected):
         # Hide from traceback on assertions (reduce output size for failed tests).
@@ -545,7 +543,7 @@ class TestTranslateStroke:
     def test_empty_undo(self):
         self.translate('*')
         self._check_translations([])
-        self._check_output([], [Translation([Stroke('*')], BACK_STRING)], None)
+        self._check_output([], [Translation([system.Stroke('*')], BACK_STRING)], None)
 
     def test_undo_translation(self):
         self.define('P/P', 'pop')
@@ -568,7 +566,7 @@ class TestTranslateStroke:
         self.s.tail = self.t('T/A/EU/L')
         self.translate('*')
         self._check_translations([])
-        self._check_output([], [Translation([Stroke('*')], BACK_STRING)], [self.s.tail])
+        self._check_output([], [Translation([system.Stroke('*')], BACK_STRING)], [self.s.tail])
 
     def test_suffix_folding(self):
         self.define('K-L', 'look')
@@ -652,9 +650,9 @@ class TestTranslateStroke:
         self.define('K', 'kick')
         self.define('PW', 'back')
         self.define('SP*', '{*!}')
-        self.translate('K')
-        self.translate('PW')
-        self.translate('SP*')
+        self.translate(system.Stroke('K'))
+        self.translate(system.Stroke('PW'))
+        self.translate(system.Stroke('SP*'))
         undo = self.lt('K PW')
         do = self.lt('SP*')
         do[0].english = 'kick{^~|^}back'

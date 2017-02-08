@@ -13,7 +13,6 @@ from plover.formatting import Formatter
 from plover.misc import shorten_path
 from plover.registry import registry
 from plover.resource import ASSET_SCHEME, resource_filename
-from plover.steno import Stroke
 from plover.steno_dictionary import StenoDictionary, StenoDictionaryCollection
 from plover.suggestions import Suggestions
 from plover.translation import Translator
@@ -347,7 +346,7 @@ class StenoEngine:
         return False
 
     def _on_stroked(self, steno_keys):
-        stroke = Stroke(steno_keys)
+        stroke = system.Stroke(steno_keys)
         log.stroke(stroke)
         self._translator.translate(stroke)
         self._trigger_hook('stroked', stroke)

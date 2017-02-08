@@ -9,18 +9,19 @@ import inspect
 import pytest
 
 from plover.dictionary.json_dict import JsonDictionary
+from plover.steno import normalize_steno
 
 from .utils import make_dict
 from . import parametrize
 
 
 LOAD_TESTS = (
-    lambda: ('{"S": "a"}', {('S', ): 'a'}),
+    lambda: ('{"S": "a"}', {normalize_steno('S'): 'a'}),
     # Default encoding is utf-8.
-    lambda: ('{"S": "café"}', {('S', ): 'café'}),
+    lambda: ('{"S": "café"}', {normalize_steno('S'): 'café'}),
     # But if that fails, the implementation
     # must automatically retry with latin-1.
-    lambda: ('{"S": "café"}'.encode('latin-1'), {('S', ): 'café'}),
+    lambda: ('{"S": "café"}'.encode('latin-1'), {normalize_steno('S'): 'café'}),
     # Invalid JSON.
     lambda: ('{"foo", "bar",}', ValueError),
     # Invalid JSON.

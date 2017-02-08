@@ -6,7 +6,7 @@ import textwrap
 
 from plover import system
 from plover.formatting import Formatter
-from plover.steno import Stroke, normalize_steno
+from plover.steno import normalize_steno
 from plover.steno_dictionary import StenoDictionary
 from plover.translation import Translator
 
@@ -31,42 +31,6 @@ class CaptureOutput:
 
     def send_engine_command(self, c):
         self.instructions.append(('e', c))
-
-
-def steno_to_stroke(steno):
-    if steno_to_stroke.system != system.NAME:
-        keys = []
-        letters = ''
-        has_hyphen = False
-        for k in system.KEYS:
-            if not has_hyphen and k.startswith('-'):
-                has_hyphen = True
-                keys.append(None)
-                letters += '-'
-            keys.append(k)
-            letters += k.strip('-')
-        steno_to_stroke.keys = keys
-        steno_to_stroke.letters = letters
-        steno_to_stroke.system = system.NAME
-        steno_to_stroke.numbers = {
-            v.strip('-'): k.strip('-')
-            for k, v in system.NUMBERS.items()
-        }
-    n = -1
-    keys = set()
-    for l in steno:
-        rl = steno_to_stroke.numbers.get(l)
-        if rl is not None:
-            keys.add('#')
-            l = rl
-        n = steno_to_stroke.letters.find(l, n + 1)
-        assert n >= 0, (steno_to_stroke.letters, l, n)
-        k = steno_to_stroke.keys[n]
-        if k is not None:
-            keys.add(k)
-    return Stroke(keys)
-
-steno_to_stroke.system = None
 
 
 def replay(blackbox, name, test):
@@ -99,7 +63,7 @@ def replay(blackbox, name, test):
         # Replay strokes.
         strokes, output = step.split(None, 1)
         for s in normalize_steno(strokes.strip()):
-            blackbox.translator.translate(steno_to_stroke(s))
+            blackbox.translator.translate(system.Stroke(s))
         # Check output.
         expected_output = ast.literal_eval(output.strip())
         msg = (

@@ -99,10 +99,7 @@ class PaperTape(Tool, Ui_PaperTape):
 
     def _paper_format(self, stroke):
         text = self._all_keys_filler * 1
-        keys = stroke.steno_keys[:]
-        if any(key in self._numbers for key in keys):
-            keys.append('#')
-        for key in keys:
+        for key in stroke.keys():
             index = system.KEY_ORDER[key]
             text[index] = self._all_keys[index]
         return ''.join(text)

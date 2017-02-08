@@ -12,7 +12,8 @@ import sys
 import textwrap
 import zipfile
 
-from setuptools import setup
+from setuptools import Extension, setup
+from Cython.Build import cythonize
 
 from plover import (
     __name__ as __software_name__,
@@ -415,6 +416,12 @@ setup(
     license=__license__,
     options=options,
     cmdclass=cmdclass,
+    ext_modules=cythonize([
+        Extension(
+            'plover.stroke',
+            sources=['plover/stroke.pyx'],
+        )
+    ], language_level=3),
 )
 
 # vim: foldmethod=marker

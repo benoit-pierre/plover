@@ -1410,3 +1410,14 @@ class TestsBlackbox(BlackboxTester):
         PUFRPB/HRAOEUPBS  ' punchlines'
         AFPS              ' punch lines'
         '''
+
+    def test_retro_toggle_asterisk(self):
+        r'''
+        "HROS": "loss",
+        "HRO*S": "lost",
+        "*P": "{*}",
+
+        HROS  ' loss'
+        *P    ' lost'
+        *P    ' loss'
+        '''

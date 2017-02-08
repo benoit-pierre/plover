@@ -19,7 +19,6 @@ emits one or more Translation objects based on a greedy conversion algorithm.
 from collections import namedtuple
 import re
 
-from plover.steno import Stroke
 from plover.steno_dictionary import StenoDictionaryCollection
 from plover.registry import registry
 from plover import system
@@ -65,7 +64,7 @@ def _mapping_to_macro(mapping, stroke):
     '''Return a macro/stroke if mapping is one, or None otherwise.'''
     macro, cmdline = None, ''
     if mapping is None:
-        if stroke.is_correction:
+        if stroke == system.UNDO_STROKE:
             macro = 'undo'
     else:
         if mapping in _LEGACY_MACROS_ALIASES:
@@ -359,21 +358,16 @@ class Translator:
                 return t
 
     def lookup(self, strokes, suffixes=()):
-        dict_key = tuple(s.rtfcre for s in strokes)
-        result = self._dictionary.lookup(dict_key)
+        result = self._dictionary.lookup(tuple(strokes))
         if result is not None:
             return result
         for key in suffixes:
-            if key in strokes[-1].steno_keys:
-                dict_key = (Stroke([key]).rtfcre,)
+            if key in strokes[-1]:
+                dict_key = (system.Stroke([key]),)
                 suffix_mapping = self._dictionary.lookup(dict_key)
                 if suffix_mapping is None:
                     continue
-                keys = strokes[-1].steno_keys[:]
-                keys.remove(key)
-                copy = strokes[:]
-                copy[-1] = Stroke(keys)
-                dict_key = tuple(s.rtfcre for s in copy)
+                dict_key = tuple(strokes[:-1] + [strokes[-1] - key])
                 main_mapping = self._dictionary.lookup(dict_key)
                 if main_mapping is None:
                     continue

@@ -7,8 +7,7 @@ from collections import defaultdict
 
 import pytest
 
-from plover.steno import Stroke
-from plover import log
+from plover import log, system
 
 
 class FakeHandler(Handler):
@@ -42,12 +41,12 @@ def test_set_filename():
     sf1 = stroke_filename('/fn1')
     log.set_stroke_filename('/fn1')
     log.enable_stroke_logging(True)
-    log.stroke(Stroke(('S-',)))
+    log.stroke(system.Stroke(('S-',)))
     sf2 = stroke_filename('/fn2')
     log.set_stroke_filename('/fn2')
-    log.stroke(Stroke(('-T',)))
+    log.stroke(system.Stroke(('-T',)))
     log.set_stroke_filename(None)
-    log.stroke(Stroke(('P-',)))
+    log.stroke(system.Stroke(('P-',)))
     assert FakeHandler.outputs == {
         sf1: ["Stroke(S : ['S-'])"],
         sf2: ["Stroke(-T : ['-T'])"],
@@ -57,11 +56,11 @@ def test_stroke():
     sf = stroke_filename('/fn')
     log.set_stroke_filename(sf)
     log.enable_stroke_logging(True)
-    log.stroke(Stroke(('S-', '-T', 'T-')))
-    log.stroke(Stroke(('#', 'S-', '-T')))
+    log.stroke(system.Stroke(('S-', '-T', 'T-')))
+    log.stroke(system.Stroke(('#', 'S-', '-T')))
     assert FakeHandler.outputs == {
         sf: ["Stroke(ST-T : ['S-', 'T-', '-T'])",
-             "Stroke(1-9 : ['1-', '-9'])"],
+             "Stroke(1-9 : ['#', 'S-', '-T'])"],
     }
 
 def test_log_translation():
@@ -75,11 +74,11 @@ def test_log_translation():
 def test_enable_stroke_logging():
     sf = stroke_filename('/fn')
     log.set_stroke_filename(sf)
-    log.stroke(Stroke(('S-',)))
+    log.stroke(system.Stroke(('S-',)))
     log.enable_stroke_logging(True)
-    log.stroke(Stroke(('T-',)))
+    log.stroke(system.Stroke(('T-',)))
     log.enable_stroke_logging(False)
-    log.stroke(Stroke(('K-',)))
+    log.stroke(system.Stroke(('K-',)))
     assert FakeHandler.outputs == {sf: ["Stroke(T : ['T-'])"]}
 
 def test_enable_translation_logging():
