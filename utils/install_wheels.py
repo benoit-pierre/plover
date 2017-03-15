@@ -68,15 +68,35 @@ _PIP_INSTALL_OPTS = _split_opts(
     '''
 )
 
+_PIP_SCRIPT = '''
+import sys
+
+from pkg_resources import load_entry_point
+
+# Work around isatty attribute being read-only with Python 2.
+class NoTTY(object):
+    def __init__(self, fp):
+        self._fp = fp
+    def isatty(self):
+        return False
+    def __getattr__(self, name):
+        return getattr(self._fp, name)
+
+if len(sys.argv) > 1 and sys.argv[1] == '--no-tty':
+    sys.stdout = NoTTY(sys.stdout)
+    del sys.argv[1]
+sys.exit(load_entry_point('pip', 'console_scripts', 'pip')())
+'''
+
 def _pip(args, verbose=True, no_progress=False):
     if verbose:
         print('running pip %s' % ' '.join(a for a in args))
         sys.stdout.flush()
-    script = 'import sys; from pkg_resources import load_entry_point;'
+    cmd = [sys.executable, '-c', _PIP_SCRIPT]
     if no_progress:
-        script += ' sys.stdout.isatty = lambda: False;'
-    script += ' sys.exit(load_entry_point("pip", "console_scripts", "pip")());'
-    return subprocess.call([sys.executable, '-c', script] + args)
+        cmd.append('--no-tty')
+    cmd.extend(args)
+    return subprocess.call(cmd)
 
 def install_wheels(args, verbose=True, no_progress=True):
     wheels_cache = WHEELS_CACHE
