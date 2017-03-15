@@ -70,7 +70,8 @@ _PIP_INSTALL_OPTS = _split_opts(
 
 def _pip(args, verbose=True, no_progress=False):
     if verbose:
-        print('running pip %s' % ' '.join(a for a in args), flush=True)
+        print('running pip %s' % ' '.join(a for a in args))
+        sys.stdout.flush()
     script = 'import sys; from pkg_resources import load_entry_point;'
     if no_progress:
         script += ' sys.stdout.isatty = lambda: False;'
