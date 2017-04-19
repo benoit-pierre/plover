@@ -1349,3 +1349,12 @@ class TestsBlackbox(BlackboxTester):
         TEFT/W-G  ' TESTING\nwith'
         W-G       ' TESTING\nwithing\nwith'
         '''
+
+    def test_prefix_strokes(self):
+        r'''
+        "/S": "{prefix^}",
+        "S": "{^suffix}",
+        "O": "{O'^}{$}",
+
+        S/S/O/S/S  " prefixsuffix O'prefixsuffix"
+        '''

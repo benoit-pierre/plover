@@ -40,6 +40,7 @@ META_RETRO_LOWER = '*>'
 META_RETRO_UPPER = '*<'
 META_STOPS = ('.', '!', '?')
 META_UPPER = '<'
+META_WORD_END = '$'
 MODE_CAMEL = 'CAMEL'
 MODE_CAPS = 'CAPS'
 MODE_LOWER = 'LOWER'
@@ -496,7 +497,7 @@ class _Action(object):
                  # Current.
                  glue=False, word=None, orthography=True, space_char=' ',
                  upper_carry=False, case=None, text=None, trailing_space='',
-                 combo=None, command=None,
+                 word_is_finished=None, combo=None, command=None,
                  # Next.
                  next_attach=False, next_case=None
                 ):
@@ -517,6 +518,8 @@ class _Action(object):
                 suffixes.
 
         upper_carry -- True if we are uppercasing the current word.
+
+        word_is_finished -- True if word is finished.
 
         othography -- True if orthography rules should be applies when adding
                       a suffix to this action.
@@ -551,6 +554,10 @@ class _Action(object):
         self.orthography = orthography
         self.next_attach = next_attach
         self.next_case = next_case
+        if word_is_finished is None:
+            self.word_is_finished = not self.next_attach
+        else:
+            self.word_is_finished = word_is_finished
         # Persistent state variables
         self.space_char = space_char
         self.case = case
@@ -570,6 +577,7 @@ class _Action(object):
             case=self.case, glue=self.glue, orthography=self.orthography,
             space_char=self.space_char, upper_carry=self.upper_carry,
             word=self.word, trailing_space=self.trailing_space,
+            word_is_finished=self.word_is_finished,
             # Next.
             next_attach=self.next_attach, next_case=self.next_case,
         )
@@ -703,6 +711,8 @@ def _atom_to_action(atom, ctx):
             action = _apply_meta_carry_capitalize(meta, ctx)
         elif meta.startswith(META_RETRO_FORMAT):
             action = _apply_meta_currency(meta, ctx)
+        elif meta == META_WORD_END:
+            action = _apply_meta_finish_word(meta, ctx)
         elif meta.startswith(META_COMMAND):
             action = _apply_meta_command(meta, ctx)
         elif meta.startswith(META_MODE):
@@ -757,6 +767,7 @@ def _apply_meta_attach(meta, ctx):
     if end:
         meta = meta[:-len(META_ATTACH_FLAG)]
         action.next_attach = True
+        action.word_is_finished = False
     last_word = ctx.last_action.word or ''
     if not meta:
         # We use an empty connection to indicate a "break" in the
@@ -859,6 +870,12 @@ def _apply_meta_currency(meta, ctx):
     return action
 
 
+def _apply_meta_finish_word(meta, ctx):
+    action = ctx.copy_last_action()
+    action.word_is_finished = True
+    return action
+
+
 def _apply_meta_carry_capitalize(meta, ctx):
     # Meta format: ^~|content^ (attach flags are optional)
     action = ctx.new_action()
@@ -873,6 +890,7 @@ def _apply_meta_carry_capitalize(meta, ctx):
     if end:
         meta = meta[:-len(META_ATTACH_FLAG)]
         action.next_attach = True
+        action.word_is_finished = False
     if meta or begin or end:
         action.text = meta
     return action
