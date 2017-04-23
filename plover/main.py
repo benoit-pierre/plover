@@ -7,6 +7,7 @@
 # Python 2/3 compatibility.
 from __future__ import print_function
 
+import atexit
 import os
 import sys
 import traceback
@@ -126,6 +127,13 @@ def main():
     except:
         gui.show_error('Unexpected error', traceback.format_exc())
         code = 2
+    if code == -1:
+        # Restart.
+        args = sys.argv[:]
+        if args[0].endswith('.py') or args[0].endswith('.pyc'):
+            args.insert(0, sys.executable)
+        atexit._run_exitfuncs()
+        os.execv(args[0], args)
     os._exit(code)
 
 if __name__ == '__main__':

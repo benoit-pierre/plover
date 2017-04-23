@@ -15,7 +15,6 @@ def show_error(title, message):
 
 
 def main(config):
-
     engine = Engine(config, KeyboardEmulation())
     if not engine.load_config():
         return 3
@@ -25,8 +24,5 @@ def main(config):
     try:
         quitting.wait()
     except KeyboardInterrupt:
-        pass
-    engine.quit()
-    engine.join()
-
-    return 0
+        engine.quit()
+    return engine.join()
