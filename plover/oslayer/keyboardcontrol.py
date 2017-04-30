@@ -17,39 +17,55 @@ emulate keyboard input.
 """
 
 import sys
+import importlib
 
 KEYBOARDCONTROL_NOT_FOUND_FOR_OS = \
         "No keyboard control module was found for os %s" % sys.platform
 
+
+class KeyboardCaptureBase(object):
+    """Listen to keyboard press and release events."""
+
+    # Callbacks for keyboard press/release events.
+    key_down = lambda key: None
+    key_up = lambda key: None
+
+    def start(self):
+        pass
+
+    def cancel(self):
+        pass
+
+    def suppress_keys(self, suppressed_keys=()):
+        raise NotImplementedError()
+
+
+class KeyboardEmulationBase(object):
+    """Emulate keyboard events."""
+
+    def send_backspaces(self, number_of_backspaces):
+        raise NotImplementedError()
+
+    def send_string(self, s):
+        raise NotImplementedError()
+
+    def send_key_combination(self, combo_string):
+        raise NotImplementedError()
+
+
 if sys.platform.startswith('linux'):
-    from plover.oslayer import xkeyboardcontrol as keyboardcontrol
+    module_name = 'xkeyboardcontrol'
 elif sys.platform.startswith('win32'):
-    from plover.oslayer import winkeyboardcontrol as keyboardcontrol
+    module_name = 'winkeyboardcontrol'
 elif sys.platform.startswith('darwin'):
-    from plover.oslayer import osxkeyboardcontrol as keyboardcontrol
+    module_name = 'osxkeyboardcontrol'
 else:
     raise Exception(KEYBOARDCONTROL_NOT_FOUND_FOR_OS)
 
+keyboardcontrol = importlib.import_module('.' + module_name, __package__)
 
-class KeyboardCapture(keyboardcontrol.KeyboardCapture):
-    """Listen to keyboard events."""
-
-    # Supported keys.
-    SUPPORTED_KEYS_LAYOUT = '''
-    Escape  F1 F2 F3 F4  F5 F6 F7 F8  F9 F10 F11 F12
-
-      `  1  2  3  4  5  6  7  8  9  0  -  =  \\ BackSpace  Insert Home Page_Up
-     Tab  q  w  e  r  t  y  u  i  o  p  [  ]               Delete End  Page_Down
-           a  s  d  f  g  h  j  k  l  ;  '      Return
-            z  x  c  v  b  n  m  ,  .  /                          Up
-                     space                                   Left Down Right
-    '''
-    SUPPORTED_KEYS = tuple(SUPPORTED_KEYS_LAYOUT.split())
-
-
-class KeyboardEmulation(keyboardcontrol.KeyboardEmulation):
-    """Emulate printable key presses and backspaces."""
-    pass
+KeyboardCapture = keyboardcontrol.KeyboardCapture
+KeyboardEmulation = keyboardcontrol.KeyboardEmulation
 
 
 if __name__ == '__main__':
@@ -77,7 +93,7 @@ if __name__ == '__main__':
 
     kc.key_down = lambda k: test(k, u'pressed')
     kc.key_up = lambda k: test(k, u'released')
-    kc.suppress_keyboard(KeyboardCapture.SUPPORTED_KEYS)
+    kc.suppress_keyboard('a s d f'.split())
     kc.start()
     print('Press CTRL-c to quit.')
     try:
