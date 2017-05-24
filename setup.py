@@ -397,7 +397,6 @@ if sys.platform.startswith('darwin'):
     setup_requires.extend([
         'macholib',
         'pip',
-        'requests',
         'wheel',
     ])
     cmdclass['bdist_app'] = BinaryDistApp
@@ -406,7 +405,6 @@ if sys.platform.startswith('darwin'):
 if sys.platform.startswith('win32'):
     setup_requires.extend([
         'pip',
-        'requests',
         'wheel',
     ])
     cmdclass['bdist_win'] = BinaryDistWin
