@@ -58,6 +58,7 @@ def get_version():
     version = m.group(1)
     if m.group(2) is not None:
         version += '+' + m.group(2)[1:].replace('-', '.')
+    version += ".melani"
     return version
 
 # }}}
