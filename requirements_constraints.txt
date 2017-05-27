@@ -1,4 +1,8 @@
+# Source distributions.
 -f https://dl.bintray.com/benoit-pierre/generic/pyobjc-core-3.1.1+plover2.tar.gz
--f https://dl.bintray.com/benoit-pierre/generic/pyobjc_core-3.1.1+plover2-cp35-cp35m-macosx_10_6_intel.whl
 -f https://dl.bintray.com/benoit-pierre/generic/pyobjc-framework-Cocoa-3.1.1+plover2.tar.gz
+-f https://dl.bintray.com/benoit-pierre/generic/pyobjc-framework-Quartz-3.1.1.tar.gz
+# Pre-built wheels.
+-f https://dl.bintray.com/benoit-pierre/generic/pyobjc_core-3.1.1+plover2-cp35-cp35m-macosx_10_6_intel.whl
 -f https://dl.bintray.com/benoit-pierre/generic/pyobjc_framework_Cocoa-3.1.1+plover2-cp35-cp35m-macosx_10_6_intel.whl
+-f https://dl.bintray.com/benoit-pierre/generic/pyobjc_framework_Quartz-3.1.1-cp35-cp35m-macosx_10_6_intel.whl
