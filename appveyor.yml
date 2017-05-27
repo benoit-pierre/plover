@@ -46,7 +46,7 @@ install:
   - "SET PATH=C:\\Program Files (x86)\\NSIS;%PATH%"
   # Setup the rest of the environment.
   - "python -m utils.get_pip"
-  - "python -m utils.install_wheels -c requirements_constraints.txt -r dev-requirements.txt"
+  - "python -m utils.install_wheels -r requirements.txt"
   - "python -m pip list --format=columns"
 
 build:

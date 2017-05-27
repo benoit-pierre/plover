@@ -6,7 +6,7 @@ You need Python 3.5 installed with pip support.
 
 For installing all the required dependencies, you can use:
 
-`pip3 install --user -c requirements_constraints.txt -r dev-requirements.txt`
+`pip3 install --user -r requirements.txt`
 
 ## Development helpers
 

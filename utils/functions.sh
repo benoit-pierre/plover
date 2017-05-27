@@ -167,7 +167,7 @@ bootstrap_dev()
   # Install requirements.
   # Note: install Cython first to speed up hidapi install.
   wheels_install Cython "$@"
-  wheels_install -c requirements_constraints.txt -r dev-requirements.txt "$@"
+  wheels_install -r requirements.txt "$@"
   # List installed Python packages.
   run "$python" -m pip list --format=columns
 }
@@ -180,7 +180,7 @@ bootstrap_dist()
   get_pip "$@"
   # Install Plover and dependencies.
   # Note: temporarily install Cython so building cython-hidapi's wheel is faster.
-  rwt Cython -- wheels_install -c requirements_constraints.txt -r dist-requirements.txt "$@"
+  rwt Cython -- wheels_install -r requirements_distribution.txt "$@"
   wheels_install --ignore-installed --no-deps "$wheel" "$@"
   # List installed Python packages.
   run "$python" -m pip list --format=columns

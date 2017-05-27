@@ -11,7 +11,7 @@ Some of the dependencies cannot be installed with pip:
 
 For the other dependencies, you can use:
 
-`pip3 install --user -c requirements_constraints.txt -r dev-requirements.txt`
+`pip3 install --user -r requirements.txt`
 
 ## Development helpers
 
