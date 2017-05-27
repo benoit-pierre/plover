@@ -1,2 +1,4 @@
-https://dl.bintray.com/benoit-pierre/generic/pyobjc_core-3.1.1+plover2-cp35-cp35m-macosx_10_11_x86_64.whl#egg=pyobjc-core
-https://dl.bintray.com/benoit-pierre/generic/pyobjc_framework_Cocoa-3.1.1+plover2-cp35-cp35m-macosx_10_11_x86_64.whl#egg=pyobjc-framework-Cocoa
+-f https://dl.bintray.com/benoit-pierre/generic/pyobjc-core-3.1.1+plover2.tar.gz
+-f https://dl.bintray.com/benoit-pierre/generic/pyobjc_core-3.1.1+plover2-cp35-cp35m-macosx_10_6_intel.whl
+-f https://dl.bintray.com/benoit-pierre/generic/pyobjc-framework-Cocoa-3.1.1+plover2.tar.gz
+-f https://dl.bintray.com/benoit-pierre/generic/pyobjc_framework_Cocoa-3.1.1+plover2-cp35-cp35m-macosx_10_6_intel.whl
