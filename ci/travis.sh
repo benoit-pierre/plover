@@ -40,6 +40,8 @@ setup()
       libsqlite3-dev
       libssl-dev
       zlib1g-dev
+      # PyQt5:
+      libgl1-mesa-glx
       # wmctrl:
       libx11-dev
       libxmu-dev
