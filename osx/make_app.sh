@@ -108,6 +108,8 @@ sed -e "s/\$python_version/$py_version/" -e "s/\$target_python/$target_python/" 
 "$python" -m utils.source_less "$target_libs" "*/pip/_vendor/distlib/*"
 
 # Strip 32-bit support
-ditto -v --arch x86_64 "$app_dir" "$stripped_dir"
+ditto -v --arch x86_64 "$app_dir" "$app_dist_dir"
 
-mv "$stripped_dir" "$app_dist_dir"
+# Check requirements.
+python="$PWD/$app_dist_dir/Contents/Frameworks/$target_python"
+run "$python" -m utils.check_requirements
