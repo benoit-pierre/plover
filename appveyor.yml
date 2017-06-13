@@ -45,25 +45,22 @@ install:
   # Add Nullsoft Scriptable Install System to the PATH.
   - "SET PATH=C:\\Program Files (x86)\\NSIS;%PATH%"
   # Setup the rest of the environment.
-  - "python -m utils.get_pip"
-  - "python -m utils.install_wheels -r requirements.txt"
-  - "python -m pip list --format=freeze"
+  - "bash ci/appveyor.sh install"
 
 build:
   verbosity: minimal
 
 before_build:
-  # Update version number from VCS.
-  - "python setup.py patch_version"
+  - "bash ci/appveyor.sh before_build"
 
 build_script:
-  - "python setup.py build"
+  - "bash ci/appveyor.sh build_script"
 
 test_script:
-  - "python setup.py test"
+  - "bash ci/appveyor.sh test_script"
 
 after_test:
-  - "python setup.py bdist_win -t -z -i"
+  - "bash ci/appveyor.sh after_test"
 
 artifacts:
 
