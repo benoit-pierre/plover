@@ -2,6 +2,9 @@
 # Copyright (c) 2010 Joshua Harlan Lifton.
 # See LICENSE.txt for details.
 
+__requires__ = 'setuptools>=30.3.0'
+
+from distutils import log
 import contextlib
 import glob
 import json
@@ -13,10 +16,9 @@ import sys
 import textwrap
 import zipfile
 
-from distutils import log
+from setuptools.command.build_py import build_py
 import pkg_resources
 import setuptools
-from setuptools.command.build_py import build_py
 
 from plover import (
     __name__ as __software_name__,
@@ -30,11 +32,40 @@ from plover import (
 )
 
 
+cmdclass = {}
+options = {}
+build_dependencies = []
+
+# Extra requirements: cannot be moved to setup.cfg...
+extras_require = {
+    ':"win32" in sys_platform': [
+        'plyer==1.2.4', # For notifications.
+    ],
+    ':"linux" in sys_platform': [
+        'python-xlib>=0.16',
+    ],
+    ':"darwin" in sys_platform': [
+        'appnope>=0.1.0',
+        'pyobjc-core==3.1.1+plover2',
+        'pyobjc-framework-Cocoa==3.1.1+plover2',
+        'pyobjc-framework-Quartz==3.1.1',
+    ],
+}
+
+# Setup requirements: we need to resolve them manually
+# for correct handling of our custom command classes...
+dist = setuptools.dist.Distribution()
+dist.parse_config_files()
+if dist.setup_requires:
+    dist.fetch_build_eggs(dist.setup_requires)
+
+
 PACKAGE = '%s-%s' % (
     __software_name__,
     __version__,
 )
 
+# Helpers. {{{
 
 def get_version():
     if not os.path.exists('.git'):
@@ -46,7 +77,6 @@ def get_version():
     if m.group(2) is not None:
         version += '+' + m.group(2)[1:].replace('-', '.')
     return version
-
 
 class Command(setuptools.Command):
 
@@ -73,6 +103,9 @@ class Command(setuptools.Command):
             sys.modules.update(old_modules)
             pkg_resources.working_set.__init__()
 
+# }}}
+
+# `bdist_win` command. {{{
 
 class BinaryDistWin(Command):
 
@@ -191,6 +224,12 @@ class BinaryDistWin(Command):
                 'windows/installer.nsi',
                 '-XOutFile ' + installer_exe)
 
+if sys.platform.startswith('win32'):
+    cmdclass['bdist_win'] = BinaryDistWin
+
+# }}}
+
+# `launch` command. {{{
 
 class Launch(Command):
 
@@ -208,6 +247,11 @@ class Launch(Command):
         with self.project_on_sys_path():
             os.execv(sys.executable, 'plover -m plover.main'.split() + self.args)
 
+cmdclass['launch'] = Launch
+
+# }}}
+
+# `patch_version` command. {{{
 
 class PatchVersion(Command):
 
@@ -233,6 +277,11 @@ class PatchVersion(Command):
         with open(version_file, 'w') as fp:
             fp.write('\n'.join(contents))
 
+cmdclass['patch_version'] = PatchVersion
+
+# }}}
+
+# `tag_weekly` command. {{{
 
 class TagWeekly(Command):
 
@@ -253,6 +302,11 @@ class TagWeekly(Command):
         log.info('tagging as %s', weekly_version)
         subprocess.check_call('git tag -f'.split() + [weekly_version])
 
+cmdclass['tag_weekly'] = TagWeekly
+
+# }}}
+
+# `test` command. {{{
 
 class Test(Command):
 
@@ -295,6 +349,11 @@ class Test(Command):
                                               'py.test')
         sys.exit(main())
 
+cmdclass['test'] = Test
+
+# }}}
+
+# `bdist_app` and `bdist_dmg` commands. {{{
 
 class BinaryDistApp(Command):
     description = 'create an application bundle for Mac'
@@ -314,7 +373,6 @@ class BinaryDistApp(Command):
         cmd = 'bash osx/make_app.sh %s %s' % (wheel_path, PACKAGE)
         log.info('running %s', cmd)
         subprocess.check_call(cmd.split())
-
 
 class BinaryDistDmg(Command):
 
@@ -341,107 +399,75 @@ class BinaryDistDmg(Command):
         log.info('running %s', cmd)
         subprocess.check_call(cmd.split())
 
-cmdclass = {
-    'launch': Launch,
-    'patch_version': PatchVersion,
-    'tag_weekly': TagWeekly,
-    'test': Test,
-}
-options = {}
-build_dependencies = []
-
 if sys.platform.startswith('darwin'):
     cmdclass['bdist_app'] = BinaryDistApp
     cmdclass['bdist_dmg'] = BinaryDistDmg
 
-if sys.platform.startswith('win32'):
-    cmdclass['bdist_win'] = BinaryDistWin
+# }}}
 
-try:
-    import PyQt5
-except ImportError:
-    pass
-else:
-    try:
-        from pyqt_distutils.build_ui import build_ui
-    except ImportError:
-        pass
-    else:
-        class BuildUi(build_ui):
+# UI generation. {{{
 
-            def finalize_options(self):
-                # Patch-in correct Python interpreter before the call
-                # to build_ui.finalize_options load the configuration.
-                with open('pyuic.json.in') as fp:
-                    cfg = json.load(fp)
-                for opt in 'pyrcc pyuic'.split():
-                    cfg[opt] = cfg[opt].replace('$PYTHON', sys.executable)
-                with open('pyuic.json', 'w') as fp:
-                    json.dump(cfg, fp)
-                build_ui.finalize_options(self)
+from pyqt_distutils.build_ui import build_ui
 
-            def run(self):
-                from utils.pyqt import fix_icons
-                self._hooks['fix_icons'] = fix_icons
-                build_ui.run(self)
+class BuildUi(build_ui):
 
-        cmdclass['build_ui'] = BuildUi
-        build_dependencies.append('build_ui')
+    def finalize_options(self):
+        # Patch-in correct Python interpreter before the call
+        # to build_ui.finalize_options load the configuration.
+        with open('pyuic.json.in') as fp:
+            cfg = json.load(fp)
+        for opt in 'pyrcc pyuic'.split():
+            cfg[opt] = cfg[opt].replace('$PYTHON', sys.executable)
+        with open('pyuic.json', 'w') as fp:
+            json.dump(cfg, fp)
+        build_ui.finalize_options(self)
 
-try:
-    from babel.messages import frontend as babel
-except ImportError:
-    pass
-else:
-    cmdclass.update({
-        'compile_catalog': babel.compile_catalog,
-        'extract_messages': babel.extract_messages,
-        'init_catalog': babel.init_catalog,
-        'update_catalog': babel.update_catalog
-    })
-    locale_dir = 'plover/gui_qt/messages'
-    template = '%s/%s.pot' % (locale_dir, __software_name__)
-    options['compile_catalog'] = {
-        'domain': __software_name__,
-        'directory': locale_dir,
-    }
-    options['extract_messages'] = {
-        'output_file': template,
-    }
-    options['init_catalog'] = {
-        'domain': __software_name__,
-        'input_file': template,
-        'output_dir': locale_dir,
-    }
-    options['update_catalog'] = {
-        'domain': __software_name__,
-        'output_dir': locale_dir,
-    }
-    build_dependencies.append('compile_catalog')
+    def run(self):
+        from utils.pyqt import fix_icons
+        self._hooks['fix_icons'] = fix_icons
+        build_ui.run(self)
 
+cmdclass['build_ui'] = BuildUi
+build_dependencies.append('build_ui')
 
-extras_require = {
-    ':"win32" in sys_platform': [
-        'PyQt5',
-        'plyer==1.2.4', # For notifications.
-    ],
-    ':"linux" in sys_platform': [
-        # Note: do not require PyQt5 on Linux, as official distribution
-        # packages are missing the required Python distribution info.
-        # 'PyQt5',
-        'python-xlib>=0.16',
-    ],
-    ':"darwin" in sys_platform': [
-        'PyQt5',
-        'pyobjc-core==3.1.1+plover2',
-        'pyobjc-framework-Cocoa==3.1.1+plover2',
-        'pyobjc-framework-Quartz==3.1.1',
-        'appnope>=0.1.0',
-    ],
+# }}}
+
+# Translations support. {{{
+
+from babel.messages import frontend as babel
+
+cmdclass.update({
+    'compile_catalog': babel.compile_catalog,
+    'extract_messages': babel.extract_messages,
+    'init_catalog': babel.init_catalog,
+    'update_catalog': babel.update_catalog
+})
+locale_dir = 'plover/gui_qt/messages'
+template = '%s/%s.pot' % (locale_dir, __software_name__)
+options['compile_catalog'] = {
+    'domain': __software_name__,
+    'directory': locale_dir,
 }
+options['extract_messages'] = {
+    'output_file': template,
+}
+options['init_catalog'] = {
+    'domain': __software_name__,
+    'input_file': template,
+    'output_dir': locale_dir,
+}
+options['update_catalog'] = {
+    'domain': __software_name__,
+    'output_dir': locale_dir,
+}
+build_dependencies.append('compile_catalog')
 
+# }}}
+
+# Patched `build_ui` command. {{{
 
 class CustomBuildPy(build_py):
+
     def run(self):
         for command in build_dependencies:
             self.run_command(command)
@@ -449,6 +475,7 @@ class CustomBuildPy(build_py):
 
 cmdclass['build_py'] = CustomBuildPy
 
+# }}}
 
 setuptools.setup(
     name=__software_name__,
@@ -462,3 +489,5 @@ setuptools.setup(
     cmdclass=cmdclass,
     extras_require=extras_require,
 )
+
+# vim: foldmethod=marker
