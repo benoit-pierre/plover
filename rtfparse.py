@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 
-import io
 import re
-import sys
 
-from plover import system
-from plover.config import DEFAULT_SYSTEM_NAME
-from plover.dictionary.base import create_dictionary
-from plover.registry import registry
 from plover.steno import normalize_steno
 
 
@@ -168,10 +162,20 @@ class Parser(object):
                 continue
 
 
-registry.update()
-system.setup(DEFAULT_SYSTEM_NAME)
+if __name__ == '__main__':
 
-input = io.open(sys.argv[1], encoding='cp1252')
-output = create_dictionary(sys.argv[2])
-output.update(Parser().parse(input))#, normalize=lambda s: tuple(s.split('/'))))
-output.save()
+    import io
+    import sys
+
+    from plover import system
+    from plover.config import DEFAULT_SYSTEM_NAME
+    from plover.dictionary.base import create_dictionary
+    from plover.registry import registry
+
+    registry.update()
+    system.setup(DEFAULT_SYSTEM_NAME)
+
+    input = io.open(sys.argv[1], encoding='cp1252')
+    output = create_dictionary(sys.argv[2])
+    output.update(Parser().parse(input))#, normalize=lambda s: tuple(s.split('/'))))
+    output.save()
