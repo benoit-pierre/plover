@@ -1,208 +1,283 @@
 # Copyright (c) 2013 Hesky Fisher
 # See LICENSE.txt for details.
 
-import os
-import codecs
-import tempfile
-import unittest
-from contextlib import contextmanager
+import ast
+import inspect
 
-import mock
+import pytest
 
-from plover.dictionary.rtfcre_dict import RtfDictionary, TranslationConverter, format_translation
+from plover.dictionary.rtfcre_dict import RtfDictionary, format_translation
+from plover.steno import normalize_steno
 
 from .utils import make_dict
 
 
-class TestCase(unittest.TestCase):
+def parametrize(tests):
+    ids = []
+    argvalues = []
+    for n, t in enumerate(tests):
+        line = inspect.getsourcelines(t)[1]
+        ids.append('%u.%u' % (n+1, line))
+        argvalues.append(t())
+    # ids = list(map(str, range(1, len(argvalues)+1)))
+    def decorator(fn):
+        parameters = list(inspect.signature(fn).parameters.keys())
+        if 'self' == parameters[0]:
+            parameters.pop(0)
+        argnames = ','.join(parameters)
+        return pytest.mark.parametrize(argnames, argvalues, ids=ids)(fn)
+    return decorator
 
-    def test_converter(self):
-        styles = {1: 'Normal', 2: 'Continuation'}
 
-        convert = TranslationConverter(styles)
+RTF_LOAD_TESTS = (
 
-        cases = (
+    # Empty dictionary.
+    lambda: '''
 
-        ('', ''),
-        (r'\-', '-'),
-        (r'\\', '\\'),
-        (r'\{', '{'),
-        (r'\}', '}'),
-        (r'\~', '{^ ^}'),
-        (r'\_', '-'),
-        ('\\\r', '{#Return}{#Return}'),
-        ('\\\n', '{#Return}{#Return}'),
-        (r'\cxds', '{^}'),
-        (r'pre\cxds ', '{pre^}'),
-        (r'pre\cxds  ', '{pre^} '),
-        (r'pre\cxds', '{pre^}'),
-        (r'\cxds post', '{^post}'),
-        (r'\cxds in\cxds', '{^in^}'),
-        (r'\cxds in\cxds ', '{^in^}'),
-        (r'\cxfc', '{-|}'),
-        (r'\cxfl', '{>}'),
-        (r'pre\cxfl', 'pre{>}'),
-        (r'{\*\cxsvatdictflags N}', '{-|}'),
-        (r'{\*\cxsvatdictflags LN1}', '{-|}'),
-        (r'\par', '{#Return}{#Return}'),
-        # caseCATalyst declares new styles without a preceding \par so we treat
-        # it as an implicit par.
-        (r'\s1', '{#Return}{#Return}'),
-        # But if the \par is present we don't treat \s as an implicit par.
-        (r'\par\s1', '{#Return}{#Return}'),
-        # Continuation styles are indented too.
-        (r'\par\s2', '{#Return}{#Return}{^    ^}'),
-        # caseCATalyst punctuation.
-        (r'.', '{.}'),
-        (r'. ', '{.} '),
-        (r' . ', ' . '),
-        (r'{\cxa Q.}.', 'Q..'),
-        (r'Mr.', 'Mr.'),  # Don't mess with period that is part of a word.
-        (r'.attribute', '.attribute'),
-        (r'{\cxstit contents}', 'contents'),
-        (r'{\cxfing c}', '{&c}'),
-        (r'{\cxp.}', '{.}'),
-        (r'{\cxp .}', '{.}'),
-        (r'{\cxp . }', '{.}'),
-        (r'{\cxp .  }', '{.}'),
-        (r'{\cxp !}', '{!}'),
-        (r'{\cxp ?}', '{?}'),
-        (r'{\cxp ,}', '{,}'),
-        (r'{\cxp ;}', '{;}'),
-        (r'{\cxp :}', '{:}'),
-        ('{\\cxp \'}', '{^\'}'),
-        ('{\\cxp -}', '{^-^}'),
-        ('{\\cxp /}', '{^/^}'),
-        ('{\\cxp...  }', '{^...  ^}'),
-        ('{\\cxp ") }', '{^") ^}'),
-        ('{\\nonexistant }', ''),
-        ('{\\nonexistant contents}', 'contents'),
-        ('{\\nonexistant cont\\_ents}', 'cont-ents'),
-        ('{\\*\\nonexistant }', ''),
-        ('{\\*\\nonexistant contents}', ''),
-        ('{eclipse command}', '{eclipse command}'),
-        ('test text', 'test text'),
-        ('test  text', 'test{^  ^}text'),
-        (r'{\cxconf [{\cxc abc}]}', 'abc'),
-        (r'{\cxconf [{\cxc abc}|{\cxc def}]}', 'def'),
-        (r'{\cxconf [{\cxc abc}|{\cxc def}|{\cxc ghi}]}', 'ghi'),
-        (r'{\cxconf [{\cxc abc}|{\cxc {\cxp... }}]}', '{^... ^}'),
-        (r'be\cxds{\*\cxsvatdictentrydate\yr2006\mo5\dy10}', '{be^}'),
-        (r'{\nonexistant {\cxp .}}', '{.}'),
-        (r'{\*\nonexistant {\cxp .}}', ''),
-        )
-        for before, after in cases:
-            result = convert(before)
-            msg = 'convert(%r) != %r: %r' % (
-                before, after, result
-            )
-            self.assertEqual(result, after, msg=msg)
 
-    def test_load_dict(self):
-        """Test the load_dict function.
 
-        This test just tests load_dict so it mocks out the converters and just
-        verifies that they are called.
+    ''',
 
-        """
+    # Only one translation.
+    lambda: r'''
+    {\*\cxs SP}translation
 
-        expected_styles = {
-            0: 'Normal',
-            1: 'Question',
-            2: 'Answer',
-            3: 'Colloquy',
-            4: 'Continuation Q',
-            5: 'Continuation A',
-            6: 'Continuation Col',
-            7: 'Paren',
-            8: 'Centered',
+    'SP': 'translation',
+    ''',
+
+    # One translation on multiple lines.
+    lambda: pytest.mark.xfail('''
+    {\\*\\cxs SP}\r\ntranslation
+
+    'SP': 'translation'
+    '''),
+
+    # Multiple translations no newlines.
+    lambda: r'''
+    {\*\cxs SP}translation{\*\cxs S}translation2
+
+    'SP': 'translation',
+    'S': 'translation2',
+    ''',
+
+    # Multiple translations on separate lines.
+    lambda: '''
+    {\\*\\cxs SP}translation\r\n{\\*\\cxs S}translation2
+
+    'SP': 'translation',
+    'S': 'translation2',
+    ''',
+    lambda: '''
+    {\\*\\cxs SP}translation\n{\\*\\cxs S}translation2
+
+    'SP': 'translation',
+    'S': 'translation2',
+    ''',
+
+    # Escaped \r and \n handled
+    lambda: '''
+    {\\*\\cxs SP}trans\\\r\\\n
+
+    'SP': 'trans{#Return}{#Return}{#Return}{#Return}',
+    ''',
+
+    # Escaped \r\n handled in mid translation
+    lambda: '''
+    {\\*\\cxs SP}trans\\\r\\\nlation
+
+    'SP': 'trans{#Return}{#Return}{#Return}{#Return}lation',
+    ''',
+
+    # Whitespace is preserved in various situations.
+    lambda: r'''
+    {\*\cxs S}t  
+
+    'S': 't{^  ^}',
+    ''',
+    lambda: r'''
+    {\*\cxs S}  t
+
+    'S': '{^  ^}t',
+    ''',
+    lambda: r'''
+    {\*\cxs S}t   {\*\cxs T}t    
+
+    'S': 't{^   ^}',
+    'T': 't{^    ^}',
+    ''',
+    lambda: '''
+    {\\*\\cxs S}t   \r\n{\\*\\cxs T}t    
+
+    'S': 't{^   ^}',
+    'T': 't{^    ^}',
+    ''',
+    lambda: '''
+    {\\*\\cxs S}t  \r\n{\\*\\cxs T} t \r\n
+
+    'S': 't{^  ^}',
+    'T': ' t ',
+    ''',
+
+    # Translations are ignored if converter returns None
+     lambda: pytest.mark.xfail(r'''
+     {\*\cxs S}return_none
+
+     '''),
+
+    lambda: r'''
+    {\*\cxs T}t t t  
+
+    'T': 't t t{^  ^}',
+    ''',
+
+    # Conflicts result on only the last one kept.
+    lambda: r'''
+    {\*\cxs T}t
+    {\*\cxs T}g
+
+    'T': 'g',
+    ''',
+    lambda: pytest.mark.xfail(r'''
+    {\*\cxs T}t
+    {\*\cxs T}return_none
+
+    'T': 't',
+    '''),
+
+    # Translation conversion tests.
+
+    lambda: ('', ''),
+    lambda: (r'\-', '-'),
+    lambda: (r'\\ ', '\\ '),
+    lambda: pytest.mark.xfail(((r'\\', '\\'))),
+    lambda: (r'\{', '{'),
+    lambda: (r'\}', '}'),
+    lambda: (r'\~', '{^ ^}'),
+    lambda: (r'\_', '-'),
+    lambda: ('\\\r', '{#Return}{#Return}'),
+    lambda: ('\\\n', '{#Return}{#Return}'),
+    lambda: (r'\cxds', '{^}'),
+    lambda: (r'pre\cxds ', '{pre^}'),
+    lambda: (r'pre\cxds  ', '{pre^} '),
+    lambda: (r'pre\cxds', '{pre^}'),
+    lambda: (r'\cxds post', '{^post}'),
+    lambda: (r'\cxds in\cxds', '{^in^}'),
+    lambda: (r'\cxds in\cxds ', '{^in^}'),
+    lambda: (r'\cxfc', '{-|}'),
+    lambda: (r'\cxfl', '{>}'),
+    lambda: (r'pre\cxfl', 'pre{>}'),
+    lambda: (r'{\*\cxsvatdictflags N}', '{-|}'),
+    lambda: (r'{\*\cxsvatdictflags LN1}', '{-|}'),
+    lambda: (r'\par', '{#Return}{#Return}'),
+    # caseCATalyst declares new styles without a preceding \par so we treat
+    # it as an implicit par.
+    lambda: (r'\s1', '{#Return}{#Return}'),
+    # But if the \par is present we don't treat \s as an implicit par.
+    lambda: (r'\par\s1', '{#Return}{#Return}'),
+    # Continuation styles are indented too.
+    lambda: (r'\par\s4', '{#Return}{#Return}{^    ^}'),
+    # caseCATalyst punctuation.
+    lambda: (r'.', '{.}'),
+    lambda: (r'. ', '{.} '),
+    lambda: (r' . ', ' . '),
+    lambda: (r'{\cxa Q.}.', 'Q..'),
+    # Don't mess with period that is part of a word.
+    lambda: (r'Mr.', 'Mr.'),
+    lambda: (r'.attribute', '.attribute'),
+    lambda: (r'{\cxstit contents}', 'contents'),
+    lambda: (r'{\cxfing c}', '{&c}'),
+    lambda: (r'{\cxp.}', '{.}'),
+    lambda: (r'{\cxp .}', '{.}'),
+    lambda: (r'{\cxp . }', '{.}'),
+    lambda: (r'{\cxp .  }', '{.}'),
+    lambda: (r'{\cxp !}', '{!}'),
+    lambda: (r'{\cxp ?}', '{?}'),
+    lambda: (r'{\cxp ,}', '{,}'),
+    lambda: (r'{\cxp ;}', '{;}'),
+    lambda: (r'{\cxp :}', '{:}'),
+    lambda: ('{\\cxp \'}', '{^\'}'),
+    lambda: ('{\\cxp -}', '{^-^}'),
+    lambda: ('{\\cxp /}', '{^/^}'),
+    lambda: ('{\\cxp...  }', '{^...  ^}'),
+    lambda: ('{\\cxp ") }', '{^") ^}'),
+    lambda: ('{\\nonexistant }', ''),
+    lambda: ('{\\nonexistant contents}', 'contents'),
+    lambda: ('{\\nonexistant cont\\_ents}', 'cont-ents'),
+    lambda: ('{\\*\\nonexistant }', ''),
+    lambda: ('{\\*\\nonexistant contents}', ''),
+    lambda: ('{eclipse command}', '{eclipse command}'),
+    lambda: ('test text', 'test text'),
+    lambda: ('test  text', 'test{^  ^}text'),
+    lambda: (r'{\cxconf [{\cxc abc}]}', 'abc'),
+    lambda: (r'{\cxconf [{\cxc abc}|{\cxc def}]}', 'def'),
+    lambda: (r'{\cxconf [{\cxc abc}|{\cxc def}|{\cxc ghi}]}', 'ghi'),
+    lambda: (r'{\cxconf [{\cxc abc}|{\cxc {\cxp... }}]}', '{^... ^}'),
+    lambda: (r'be\cxds{\*\cxsvatdictentrydate\yr2006\mo5\dy10}', '{be^}'),
+    lambda: (r'{\nonexistant {\cxp .}}', '{.}'),
+    lambda: (r'{\*\nonexistant {\cxp .}}', ''),
+)
+
+@parametrize(RTF_LOAD_TESTS)
+def test_rtf_load(test_case):
+    if isinstance(test_case, tuple):
+        # Translation conversion test.
+        rtf_entries = '{\*\cxs S}' + test_case[0]
+        dict_entries = { normalize_steno('S'): test_case[1] }
+    else:
+        rtf_entries, dict_entries = test_case.rsplit('\n\n', 1)
+        dict_entries = {
+            normalize_steno(k): v
+            for k, v in ast.literal_eval('{' + dict_entries + '}').items()
         }
-
-        header = '\r\n'.join(
+    rtf_styles = {
+        0: 'Normal',
+        1: 'Question',
+        2: 'Answer',
+        3: 'Colloquy',
+        4: 'Continuation Q',
+        5: 'Continuation A',
+        6: 'Continuation Col',
+        7: 'Paren',
+        8: 'Centered',
+    }
+    rtf = (
+        '\r\n'.join(
             [r'{\rtf1\ansi\cxdict{\*\cxrev100}{\*\cxsystem Fake Software}'] +
-            [r'{\s%d %s;}' % (k, v) for k, v in expected_styles.items()] +
+            [r'{\s%d %s;}' % (k, v) for k, v in rtf_styles.items()] +
             ['}'])
-        footer = '\r\n}'
+        + rtf_entries
+        + '\r\n}'
+    )
+    with make_dict(rtf.encode('cp1252')) as filename:
+        d = RtfDictionary.load(filename)
+        assert dict(d.items()) == dict_entries
 
-        this = self
 
-        class Converter(object):
-            def __init__(self, styles):
-                this.assertEqual(styles, expected_styles)
 
-            def __call__(self, s):
-                if s == 'return_none':
-                    return None
-                return 'converted(%s)' % s
+@pytest.mark.parametrize('before, expected', (
+    ('', ''),
+    ('{^in^}', r'\cxds in\cxds '),
+    ('{pre^}', r'pre\cxds '),
+    ('{pre^} ', r'pre\cxds '),
+    ('{pre^}  ', r'pre\cxds '),
+))
+def test_format_translation(before, expected):
+    result = format_translation(before)
+    assert result == expected
 
-        convert = Converter(expected_styles)
-        normalize = lambda x: 'normalized(%s)' % x
 
-        cases = (
-
-        # Empty dictionary.
-        ('', {}),
-        # Only one translation.
-        ('{\\*\\cxs SP}translation', {'SP': 'translation'}),
-        # Multiple translations no newlines.
-        ('{\\*\\cxs SP}translation{\\*\\cxs S}translation2',
-         {'SP': 'translation', 'S': 'translation2'}),
-        # Multiple translations on separate lines.
-        ('{\\*\\cxs SP}translation\r\n{\\*\\cxs S}translation2',
-         {'SP': 'translation', 'S': 'translation2'}),
-        ('{\\*\\cxs SP}translation\n{\\*\\cxs S}translation2',
-         {'SP': 'translation', 'S': 'translation2'}),
-        # Escaped \r and \n handled
-        ('{\\*\\cxs SP}trans\\\r\\\n', {'SP': 'trans\\\r\\\n'}),
-        # Escaped \r\n handled in mid translation
-        ('{\\*\\cxs SP}trans\\\r\\\nlation', {'SP': 'trans\\\r\\\nlation'}),
-        # Whitespace is preserved in various situations.
-        ('{\\*\\cxs S}t  ', {'S': 't  '}),
-        ('{\\*\\cxs S}t   {\\*\\cxs T}t    ', {'S': 't   ', 'T': 't    '}),
-        ('{\\*\\cxs S}t   \r\n{\\*\\cxs T}t    ', {'S': 't   ', 'T': 't    '}),
-        ('{\\*\\cxs S}t  \r\n{\\*\\cxs T} t \r\n', {'S': 't  ', 'T': ' t '}),
-        # Translations are ignored if converter returns None
-        ('{\\*\\cxs S}return_none', {}),
-        ('{\\*\\cxs T}t t t  ', {'T': 't t t  '}),
-        # Conflicts result on only the last one kept.
-        ('{\\*\\cxs T}t{\\*\\cxs T}g', {'T': 'g'}),
-        ('{\\*\\cxs T}t{\\*\\cxs T}return_none', {'T': 't'}),
-        )
-
-        patch_path = 'plover.dictionary.rtfcre_dict'
-        with mock.patch.multiple(patch_path, normalize_steno=normalize,
-                                 TranslationConverter=Converter):
-            for contents, expected in cases:
-                expected = dict((normalize(k), convert(v))
-                                for k, v in expected.items())
-                with make_dict((header + contents + footer).encode('cp1252')) as filename:
-                    d = RtfDictionary.load(filename)
-                    self.assertEqual(dict(d.items()), expected)
-
-    def test_format_translation(self):
-        cases = (
-        ('', ''),
-        ('{^in^}', r'\cxds in\cxds '),
-        ('{pre^}', r'pre\cxds '),
-        ('{pre^} ', r'pre\cxds '),
-        ('{pre^}  ', r'pre\cxds ')
-        )
-        for before, expected in cases:
-            result = format_translation(before)
-            msg = 'format_translation(%r) != %r: %r' % (
-                before, expected, result
-            )
-            self.assertEqual(result, expected, msg=msg)
-
-    def test_save_dictionary(self):
-        contents = {
-            'S/T': '{pre^}',
-        }
-        expected = b'{\\rtf1\\ansi{\\*\\cxrev100}\\cxdict{\\*\\cxsystem Plover}{\\stylesheet{\\s0 Normal;}}\r\n{\\*\\cxs S///T}pre\\cxds \r\n}\r\n'
-        with make_dict(b'foo') as filename:
-            d = RtfDictionary.create(filename)
-            d.update(contents)
-            d.save()
-            with open(filename, 'rb') as fp:
-                contents = fp.read()
-        self.assertEqual(contents, expected)
+@pytest.mark.parametrize('contents, expected', (
+    ({'S/T': '{pre^}'},
+     b'{\\rtf1\\ansi{\\*\\cxrev100}\\cxdict{\\*\\cxsystem Plover}'
+     b'{\\stylesheet{\\s0 Normal;}}\r\n'
+     b'{\\*\\cxs S///T}pre\\cxds \r\n}\r\n'
+    ),
+))
+def test_save_dictionary(contents, expected):
+    with make_dict(b'foo') as filename:
+        d = RtfDictionary.create(filename)
+        d.update(contents)
+        d.save()
+        with open(filename, 'rb') as fp:
+            contents = fp.read()
+    assert contents == expected
