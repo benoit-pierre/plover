@@ -1,10 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import io
 import re
 import sys
-
-from six import PY2
 
 from plover import system
 from plover.config import DEFAULT_SYSTEM_NAME
@@ -49,13 +47,9 @@ class Parser(object):
 
     def parse(self, input, normalize=normalize_steno):
         tokenizer = rtf_tokenize(input)
-        if PY2:
-            tokenizer_next = tokenizer.next
-        else:
-            tokenizer_next = tokenizer.__next__
-        kind, value = tokenizer_next()
+        kind, value = next(tokenizer)
         assert (kind, value) == ('gstart', (None, 'rtf1')), (kind, value)
-        kind, value = tokenizer_next()
+        kind, value = next(tokenizer)
         group_stack = [('', None, False)]
         g_text, g_destination, g_ignoring = '', 'rtf1', False
         next_token = None
@@ -65,7 +59,7 @@ class Parser(object):
                 kind, value = next_token
                 next_token = None
             else:
-                kind, value = tokenizer_next()
+                kind, value = next(tokenizer)
             if kind is None:
                 if steno is not None:
                     yield normalize(steno), g_text
@@ -144,14 +138,14 @@ class Parser(object):
                 elif value == 'cxfc':
                     g_text += '{-|}'
                 elif value == 'cxfing':
-                    kind, value = tokenizer_next()
+                    kind, value = next(tokenizer)
                     assert kind == 'text'
                     g_text += '{&' + value + '}'
                 elif value == 'cxds':
-                    next_token = tokenizer_next()
+                    next_token = next(tokenizer)
                     if next_token[0] == 'text':
                         text = next_token[1]
-                        next_token = tokenizer_next()
+                        next_token = next(tokenizer)
                         if next_token == ('cword', 'cxds'):
                             # Infix
                             g_text += '{^' + text + '^}'
@@ -164,7 +158,7 @@ class Parser(object):
                 continue
             # Text.
             if kind == 'text':
-                next_token = tokenizer_next()
+                next_token = next(tokenizer)
                 if next_token == ('cword', 'cxds'):
                     # Suffix.
                     g_text += '{' + value + '^}'
