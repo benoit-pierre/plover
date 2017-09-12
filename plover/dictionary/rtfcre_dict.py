@@ -313,6 +313,11 @@ def format_translation(t):
 class RtfDictionary(StenoDictionary):
 
     def _load(self, filename):
+        import io
+        from rtfparse import Parser
+        input = io.open(filename, encoding='cp1252')
+        self.update(Parser().parse(input))
+        return
         with open(filename, 'rb') as fp:
             s = fp.read().decode('cp1252')
         def parse():
