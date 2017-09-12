@@ -3,6 +3,7 @@
 import re
 
 from plover.steno import normalize_steno
+from plover import log
 
 
 RTF_TOKEN_PARTS = (
@@ -50,13 +51,13 @@ class Parser(object):
     def __init__(self):
         pass
 
-    def parse(self, input, normalize=normalize_steno):
+    def parse(self, input, normalize=normalize_steno, skip_errors=True):
         tokenizer = rtf_tokenize(input)
         token, position = next(tokenizer)
         if token != ('gstart', (None, 'rtf1')):
             raise ParseError(position, 'expected rtf group, got: %r', token)
         token, position = next(tokenizer)
-        group_stack = [('', None, False)]
+        group_stack = []
         g_text, g_destination, g_ignoring = '', 'rtf1', False
         next_token, next_position = None, None
         steno = None
@@ -80,8 +81,15 @@ class Parser(object):
                     destination = value[1]
                     if destination == 'cxs':
                         ignoring = False
-                        if len(group_stack) != 1:
-                            raise ParseError(position, 'group stack depth is %u', len(group_stack))
+                        if group_stack:
+                            err = ParseError(position, 'group stack depth is %u', len(group_stack))
+                            if skip_errors:
+                                log.error('%s', err)
+                                g_text, g_destination, g_ignoring = group_stack[0]
+                                assert g_destination == 'rtf1'
+                                group_stack.clear()
+                            else:
+                                raise err
                         if steno is not None:
                             yield normalize(steno), g_text
                             steno = None
@@ -119,8 +127,19 @@ class Parser(object):
                         text = '{&' + g_text + '}'
                     else:
                         text = g_text
-                if not group_stack:
-                    raise ParseError(position, 'group stack depth is %u', len(group_stack))
+                if g_destination == 'rtf1':
+                    next_token, next_position = next(tokenizer)
+                    if next_token != (None, None):
+                        err = ParseError(next_position, 'expected end of file, got: %r', next_token)
+                        if skip_errors:
+                            log.error('%s', err)
+                            # Skip to next \cxs group.
+                            while next_token != ('gstart', ('\\*', 'cxs')):
+                                next_token, next_position = next(tokenizer)
+                        else:
+                            raise err
+                    g_text = text
+                    continue
                 g_text, g_destination, g_ignoring = group_stack.pop()
                 g_text += text
                 continue
