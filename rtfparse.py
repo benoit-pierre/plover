@@ -29,9 +29,20 @@ def rtf_tokenize(input):
             start, end = m.span()
             assert start == cnum
             name, wanted = RTF_TOKEN_MATCH_RESULTS_FOR_LASTINDEX[m.lastindex]
-            yield name, m.group(*wanted)
+            yield (name, m.group(*wanted)), (lnum, cnum)
             cnum = end
-    yield None, None
+    yield (None, None), (lnum, cnum)
+
+
+class ParseError(Exception):
+
+    def __init__(self, position, fmt, *fmt_args):
+        lnum, cnum = position
+        msg = 'line %u, column %u: %s' % (
+            lnum + 1, cnum + 1,
+            fmt % fmt_args,
+        )
+        super(ParseError, self).__init__(msg)
 
 
 class Parser(object):
@@ -41,19 +52,21 @@ class Parser(object):
 
     def parse(self, input, normalize=normalize_steno):
         tokenizer = rtf_tokenize(input)
-        kind, value = next(tokenizer)
-        assert (kind, value) == ('gstart', (None, 'rtf1')), (kind, value)
-        kind, value = next(tokenizer)
+        token, position = next(tokenizer)
+        if token != ('gstart', (None, 'rtf1')):
+            raise ParseError(position, 'expected rtf group, got: %r', token)
+        token, position = next(tokenizer)
         group_stack = [('', None, False)]
         g_text, g_destination, g_ignoring = '', 'rtf1', False
-        next_token = None
+        next_token, next_position = None, None
         steno = None
         while True:
             if next_token is not None:
-                kind, value = next_token
-                next_token = None
+                token, position = next_token, next_position
+                next_token, next_position = None, None
             else:
-                kind, value = next(tokenizer)
+                token, position = next(tokenizer)
+            kind, value = token
             if kind is None:
                 if steno is not None:
                     yield normalize(steno), g_text
@@ -67,7 +80,8 @@ class Parser(object):
                     destination = value[1]
                     if destination == 'cxs':
                         ignoring = False
-                        assert len(group_stack) == 1, len(group_stack)
+                        if len(group_stack) != 1:
+                            raise ParseError(position, 'group stack depth is %u', len(group_stack))
                         if steno is not None:
                             yield normalize(steno), g_text
                             steno = None
@@ -105,6 +119,8 @@ class Parser(object):
                         text = '{&' + g_text + '}'
                     else:
                         text = g_text
+                if not group_stack:
+                    raise ParseError(position, 'group stack depth is %u', len(group_stack))
                 g_text, g_destination, g_ignoring = group_stack.pop()
                 g_text += text
                 continue
@@ -132,18 +148,19 @@ class Parser(object):
                 elif value == 'cxfc':
                     g_text += '{-|}'
                 elif value == 'cxfing':
-                    kind, value = next(tokenizer)
-                    assert kind == 'text'
-                    g_text += '{&' + value + '}'
+                    token, position = next(tokenizer)
+                    if token[0] != 'text':
+                        raise ParseError(position, 'expected text, got: %r', token)
+                    g_text += '{&' + token[1] + '}'
                 elif value == 'cxds':
-                    next_token = next(tokenizer)
+                    next_token, next_position = next(tokenizer)
                     if next_token[0] == 'text':
                         text = next_token[1]
-                        next_token = next(tokenizer)
+                        next_token, next_position = next(tokenizer)
                         if next_token == ('cword', 'cxds'):
                             # Infix
                             g_text += '{^' + text + '^}'
-                            next_token = None
+                            next_token, next_position = None, None
                         else:
                             # Prefix.
                             g_text += '{^' + text + '}'
@@ -152,11 +169,11 @@ class Parser(object):
                 continue
             # Text.
             if kind == 'text':
-                next_token = next(tokenizer)
+                next_token, next_position = next(tokenizer)
                 if next_token == ('cword', 'cxds'):
                     # Suffix.
                     g_text += '{' + value + '^}'
-                    next_token = None
+                    next_token, next_position = None, None
                 else:
                     g_text += value
                 continue
