@@ -2,6 +2,7 @@
 
 import re
 
+from plover.steno_dictionary import StenoDictionary
 from plover.steno import normalize_steno
 from plover import log
 
@@ -228,6 +229,10 @@ if __name__ == '__main__':
     system.setup(DEFAULT_SYSTEM_NAME)
 
     input = io.open(sys.argv[1], encoding='cp1252')
-    output = create_dictionary(sys.argv[2])
-    output.update(Parser().parse(input))#, normalize=lambda s: tuple(s.split('/'))))
-    output.save()
+    parse = Parser().parse(input)
+    if len(sys.argv) > 2:
+        output = create_dictionary(sys.argv[2])
+        output.update(parse)
+        output.save()
+    else:
+        StenoDictionary().update(parse)
