@@ -163,8 +163,8 @@ RTF_LOAD_TESTS = (
     lambda: (r'\cxds in\cxds', '{^in^}'),
     lambda: (r'\cxds in\cxds ', '{^in^}'),
     lambda: (r'\cxfc', '{-|}'),
-    lambda: pytest.mark.xfail((r'\cxfl', '{>}')),
-    lambda: pytest.mark.xfail((r'pre\cxfl', 'pre{>}')),
+    lambda: (r'\cxfl', '{>}'),
+    lambda: (r'pre\cxfl', 'pre{>}'),
     # Stenovations extensions...
     lambda: pytest.mark.xfail((r'{\*\cxsvatdictflags N}', '{-|}')),
     lambda: pytest.mark.xfail((r'{\*\cxsvatdictflags LN1}', '{-|}')),

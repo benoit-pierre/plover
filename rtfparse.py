@@ -166,6 +166,8 @@ class Parser(object):
                     g_text += '{#Return}{#Return}'
                 elif value == 'cxfc':
                     g_text += '{-|}'
+                elif value == 'cxfl':
+                    g_text += '{>}'
                 elif value == 'cxfing':
                     token, position = next(tokenizer)
                     if token[0] != 'text':
