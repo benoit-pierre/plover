@@ -177,8 +177,8 @@ RTF_LOAD_TESTS = (
     # Continuation styles are indented too.
     lambda: pytest.mark.xfail((r'\par\s4', '{#Return}{#Return}{^    ^}')),
     # caseCATalyst punctuation.
-    lambda: pytest.mark.xfail((r'.', '{.}')),
-    lambda: pytest.mark.xfail((r'. ', '{.} ')),
+    lambda: (r'.', '{.}'),
+    lambda: (r'. ', '{.} '),
     lambda: (r' . ', ' . '),
     lambda: (r'{\cxa Q.}.', 'Q..'),
     # Don't mess with period that is part of a word.

@@ -53,6 +53,12 @@ class Parser(object):
 
     def parse(self, input, normalize=normalize_steno, skip_errors=True):
         def finalize_translation(text):
+            if not text:
+                return text
+            # caseCATalyst doesn't put punctuation in \cxp: treat any isolated
+            # punctuation at the beginning of the translation as special.
+            if text[0] in '.?!:;,' and text[1:] in ('', ' '):
+                return '{' + text[0] + '}' + text[1:]
             left_ws = len(text) - len(text.lstrip())
             if left_ws > 1:
                 text = '{^' + text[:left_ws] + '^}' + text[left_ws:]
