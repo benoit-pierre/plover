@@ -52,6 +52,14 @@ class Parser(object):
         pass
 
     def parse(self, input, normalize=normalize_steno, skip_errors=True):
+        def finalize_translation(text):
+            left_ws = len(text) - len(text.lstrip())
+            if left_ws > 1:
+                text = '{^' + text[:left_ws] + '^}' + text[left_ws:]
+            right_ws = len(text) - len(text.rstrip())
+            if right_ws > 1:
+                text = text[:-right_ws] + '{^' + text[-right_ws:] + '^}'
+            return text
         tokenizer = rtf_tokenize(input)
         token, position = next(tokenizer)
         if token != ('gstart', (None, 'rtf1')):
@@ -70,7 +78,7 @@ class Parser(object):
             kind, value = token
             if kind is None:
                 if steno is not None:
-                    yield normalize(steno), g_text
+                    yield normalize(steno), finalize_translation(g_text)
                 break
             # Group start.
             if kind == 'gstart':
@@ -91,7 +99,7 @@ class Parser(object):
                             else:
                                 raise err
                         if steno is not None:
-                            yield normalize(steno), g_text
+                            yield normalize(steno), finalize_translation(g_text)
                             steno = None
                         g_text = ''
                     else:

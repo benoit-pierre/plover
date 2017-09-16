@@ -89,39 +89,39 @@ RTF_LOAD_TESTS = (
     '''),
 
     # Whitespace is preserved in various situations.
-    lambda: pytest.mark.xfail(r'''
+    lambda: r'''
     {\*\cxs S}t  
 
     'S': 't{^  ^}',
-    '''),
-    lambda: pytest.mark.xfail(r'''
+    ''',
+    lambda: r'''
     {\*\cxs S}  t
 
     'S': '{^  ^}t',
-    '''),
-    lambda: pytest.mark.xfail(r'''
+    ''',
+    lambda: r'''
     {\*\cxs S}t   {\*\cxs T}t    
 
     'S': 't{^   ^}',
     'T': 't{^    ^}',
-    '''),
-    lambda: pytest.mark.xfail('''
+    ''',
+    lambda: '''
     {\\*\\cxs S}t   \r\n{\\*\\cxs T}t    
 
     'S': 't{^   ^}',
     'T': 't{^    ^}',
-    '''),
-    lambda: pytest.mark.xfail('''
+    ''',
+    lambda: '''
     {\\*\\cxs S}t  \r\n{\\*\\cxs T} t \r\n
 
     'S': 't{^  ^}',
     'T': ' t ',
-    '''),
-    lambda: pytest.mark.xfail(r'''
+    ''',
+    lambda: r'''
     {\*\cxs T}t t t  
 
     'T': 't t t{^  ^}',
-    '''),
+    ''',
 
     # Translations are ignored if converter returns None
      lambda: pytest.mark.xfail(r'''
