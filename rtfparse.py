@@ -7,11 +7,11 @@ from plover import log
 
 
 RTF_TOKEN_PARTS = (
-    ('cchar' , r'\\([-_~\\{}*])'                        , (0,)  ),
+    ('cchar' , '\\\\([-_~\\\\{}*\n\r])'                 , (0,)  ),
     ('cword' , r'\\([A-Za-z]+-?[0-9]*) ?'               , (0,)  ),
     ('gstart', r'({)(?:(\\\*)?\\([A-Za-z]+-?[0-9]*) ?)?', (1, 2)),
     ('gend'  , r'(})'                                   , (0,)  ),
-    ('text'  , r'([^\n\r\\{}]+)'                        , (0,)  ),
+    ('text'  , '([^\n\r\\\\{}]+)'                       , (0,)  ),
 )
 RTF_TOKEN_MATCH_RESULTS_FOR_LASTINDEX = [None]
 for name, pattern, wanted in RTF_TOKEN_PARTS:
@@ -163,7 +163,7 @@ class Parser(object):
                     g_text += '{^ ^}'
                 elif value == '_':
                     g_text += '{^-^}'
-                elif value in ('\\r', '\\n'):
+                elif value in ('\r', '\n'):
                     g_text += '{#Return}{#Return}'
                 else:
                     g_text += value

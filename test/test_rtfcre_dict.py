@@ -75,18 +75,18 @@ RTF_LOAD_TESTS = (
     ''',
 
     # Escaped \r and \n handled
-    lambda: pytest.mark.xfail('''
+    lambda: '''
     {\\*\\cxs SP}trans\\\r\\\n
 
     'SP': 'trans{#Return}{#Return}{#Return}{#Return}',
-    '''),
+    ''',
 
     # Escaped \r\n handled in mid translation
-    lambda: pytest.mark.xfail('''
+    lambda: '''
     {\\*\\cxs SP}trans\\\r\\\nlation
 
     'SP': 'trans{#Return}{#Return}{#Return}{#Return}lation',
-    '''),
+    ''',
 
     # Whitespace is preserved in various situations.
     lambda: r'''
@@ -153,8 +153,8 @@ RTF_LOAD_TESTS = (
     lambda: (r'\}', '}'),
     lambda: (r'\~', '{^ ^}'),
     lambda: (r'\_', '{^-^}'),
-    lambda: pytest.mark.xfail(('\\\r', '{#Return}{#Return}')),
-    lambda: pytest.mark.xfail(('\\\n', '{#Return}{#Return}')),
+    lambda: ('\\\r', '{#Return}{#Return}'),
+    lambda: ('\\\n', '{#Return}{#Return}'),
     lambda: (r'\cxds', '{^}'),
     lambda: (r'pre\cxds ', '{pre^}'),
     lambda: (r'pre\cxds  ', '{pre^} '),
