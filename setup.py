@@ -120,6 +120,7 @@ class BinaryDistWin(Command):
             if self.verbose:
                 log.info('running %s', ' '.join(a for a in args))
             subprocess.check_call(args)
+        run(dist_py, '-c', 'import ctypes')
         # Install pip/wheel.
         run(dist_py, '-m', 'plover_build_utils.get_pip')
         # Install Plover + standard plugins and dependencies.

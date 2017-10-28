@@ -56,11 +56,11 @@ before_build:
   # Update version number from VCS.
   - "python setup.py patch_version"
 
-build_script:
-  - "python setup.py build"
+# build_script:
+#   - "python setup.py build"
 
-test_script:
-  - "python setup.py test"
+# test_script:
+#   - "python setup.py test"
 
 after_test:
   - "python setup.py bdist_win -t -z -i"
