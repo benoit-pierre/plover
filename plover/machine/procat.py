@@ -3,13 +3,15 @@
 
 """Thread-based monitoring of a ProCAT stenotype machine."""
 
+import binascii
+
+from plover import log
 from plover.machine.base import SerialStenotypeBase
 
-"""
-ProCAT machines send 4 bytes per stroke, with the last byte only consisting of
-FF. So we need only look at the first 3 bytes to see our steno. The leading
-bit is 0.
-"""
+
+# ProCAT machines send 4 bytes per stroke, with the last byte only consisting of
+# FF. So we need only look at the first 3 bytes to see our steno. The leading
+# bit is 0.
 STENO_KEY_CHART = ('', '#', 'S-', 'T-', 'K-', 'P-', 'W-', 'H-',
                    'R-', 'A-', 'O-', '*', '-E', '-U', '-F', '-R',
                    '-P', '-B', '-L', '-G', '-T', '-S', '-D', '-Z',
@@ -33,19 +35,15 @@ class ProCAT(SerialStenotypeBase):
     def run(self):
         """Overrides base class run method. Do not call directly."""
         self._ready()
-        while not self.finished.isSet():
-
-            # Grab data from the serial port.
-            raw = self.serial_port.read(BYTES_PER_STROKE)
-            if not raw:
+        for packet in self._iter_packets(BYTES_PER_STROKE):
+            if (packet[0] & 0x80) or packet[3] != 0xff:
+                log.error('discarding invalid packet: %s',
+                          binascii.hexlify(packet))
                 continue
-
-            # Convert the raw to a list of steno keys.
             steno_keys = self.keymap.keys_to_actions(
-                self.process_steno_packet(raw)
+                self.process_steno_packet(packet)
             )
             if steno_keys:
-                # Notify all subscribers.
                 self._notify(steno_keys)
 
     @staticmethod
