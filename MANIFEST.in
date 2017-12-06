@@ -23,6 +23,7 @@ include plover/gui_qt/resources/*.qrc
 include plover/gui_qt/resources/*.svg
 include plover_build_utils/*.sh
 include requirements*.txt
+include requirements/*.whl
 include rpm/*.spec
 include test.bat
 include test.sh
