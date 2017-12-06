@@ -103,7 +103,7 @@ rm "$target_dir/Python.framework/Resources"
 sed -e "s/\$python_version/$py_version/" -e "s/\$target_python/$target_python/" osx/app_resources/dist_blacklist.txt > build/dist_blacklist.txt
 "$python" -m plover_build_utils.trim "$target_dir/Python.framework" build/dist_blacklist.txt
 # Make distribution source-less
-"$python" -m plover_build_utils.source_less "$target_libs" "*/pip/_vendor/distlib/*"
+# "$python" -m plover_build_utils.source_less "$target_libs" "*/pip/_vendor/distlib/*"
 
 # Strip 32-bit support
 ditto -v --arch x86_64 "$app_dir" "$app_dist_dir"

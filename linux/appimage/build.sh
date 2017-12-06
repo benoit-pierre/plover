@@ -116,7 +116,7 @@ run cp 'plover/assets/plover.png' "$appdir/plover.png"
 run "$python" -m plover_build_utils.trim "$appdir" linux/appimage/blacklist.txt
 
 # Make distribution source-less.
-run "$python" -m plover_build_utils.source_less "$appdir/usr/lib/python3.6" '*/pip/_vendor/distlib/*'
+# run "$python" -m plover_build_utils.source_less "$appdir/usr/lib/python3.6" '*/pip/_vendor/distlib/*'
 
 # Add launcher.
 # Note: don't use AppImage's AppRun because

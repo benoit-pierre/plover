@@ -180,11 +180,11 @@ class BinaryDistWin(Command):
         os.rename(os.path.join(dist_dir, 'data', 'vcruntime140.dll'),
                   os.path.join(dist_dir, 'vcruntime140.dll'))
         # Make distribution source-less.
-        run(dist_py, '-m', 'plover_build_utils.source_less',
-            # Don't touch pip._vendor.distlib sources,
-            # or `pip install` will not be usable...
-            dist_data, '*/pip/_vendor/distlib/*',
-        )
+        # run(dist_py, '-m', 'plover_build_utils.source_less',
+        #     # Don't touch pip._vendor.distlib sources,
+        #     # or `pip install` will not be usable...
+        #     dist_data, '*/pip/_vendor/distlib/*',
+        # )
         # Check requirements.
         run(dist_py, '-I', '-m', 'plover_build_utils.check_requirements')
         # Zip results.
