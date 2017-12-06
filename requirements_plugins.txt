@@ -1,3 +1,7 @@
+# plover-melani
+plover-python-dictionary==0.5.9
+requirements/plover_melani-0.5.7-py3-none-any.whl
+requirements/plover_stroke-0.3.1-py3-none-any.whl
 # plover-plugins-manager
 bleach==3.1.4
 cffi==1.14.0
