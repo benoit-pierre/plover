@@ -1134,10 +1134,16 @@ class KeyboardEmulation(KeyboardEmulationBase):
     # Special keysym to mark custom keyboard mappings.
     PLOVER_MAPPING_KEYSYM = 0x01ffffff
 
-    def __init__(self):
+    def __init__(self, params):
         """Prepare to emulate keyboard events."""
+        assert not params
         self._display = display.Display()
         self._key_combo = KeyCombo(self._get_keycode_from_keystring)
+        self._backspace_mapping = None
+        self._custom_mappings_queue = []
+        self._keymap = {}
+
+    def start(self):
         self._update_keymap()
 
     def _update_keymap(self):

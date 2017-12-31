@@ -302,11 +302,12 @@ class KeyboardEmulation(KeyboardEmulationBase):
 
     RAW_PRESS, STRING_PRESS = range(2)
 
-    def __init__(self):
+    def __init__(self, params):
+        assert not params
         self._layout = KeyboardLayout()
-        self._key_combo = KeyCombo(name_to_code)
+        self._key_combo = KeyCombo(self._name_to_code)
 
-    def name_to_code(self, name):
+    def _name_to_code(self, name):
         # Static key codes
         code = KEYNAME_TO_KEYCODE.get(name)
         if code is not None:
@@ -321,6 +322,9 @@ class KeyboardEmulation(KeyboardEmulationBase):
             char = KEYNAME_TO_CHAR.get(name, name)
             code, mods = self._layout.char_to_key_sequence(char)[0]
         return code
+
+    def cancel(self):
+        self._layout.cancel()
 
     @staticmethod
     def send_backspaces(number_of_backspaces):

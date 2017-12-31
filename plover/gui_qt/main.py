@@ -13,7 +13,6 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from plover import log
 from plover import __name__ as __software_name__
 from plover import __version__
-from plover.oslayer.keyboardcontrol import KeyboardEmulation
 
 from plover.gui_qt.engine import Engine
 from plover.gui_qt.i18n import get_language, install_gettext
@@ -48,7 +47,7 @@ class Application:
 
         QApplication.setQuitOnLastWindowClosed(False)
 
-        self._app.engine = self._engine = Engine(config, KeyboardEmulation())
+        self._app.engine = self._engine = Engine(config)
         # On macOS, quitting through the dock will result
         # in a direct call to `QCoreApplication.quit`.
         self._app.aboutToQuit.connect(self._app.engine.quit)
