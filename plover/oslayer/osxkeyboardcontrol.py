@@ -305,6 +305,9 @@ class KeyboardEmulation(KeyboardEmulationBase):
     def __init__(self):
         self._layout = KeyboardLayout()
 
+    def cancel(self):
+        self._layout.cancel()
+
     @staticmethod
     def send_backspaces(number_of_backspaces):
         for _ in range(number_of_backspaces):

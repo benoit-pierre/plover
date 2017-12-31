@@ -109,6 +109,7 @@ DEFAULTS = {
     'start_attached': False,
     'start_capitalized': False,
     'undo_levels': config.DEFAULT_UNDO_LEVELS,
+    'output_type': 'Keyboard Emulation',
     'log_file_name': expand_path('strokes.log'),
     'enable_stroke_logging': False,
     'enable_translation_logging': False,

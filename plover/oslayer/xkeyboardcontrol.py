@@ -1135,7 +1135,9 @@ class KeyboardEmulation(KeyboardEmulationBase):
     def __init__(self):
         """Prepare to emulate keyboard events."""
         self._display = display.Display()
-        self._update_keymap()
+        self._backspace_mapping = None
+        self._custom_mappings_queue = []
+        self._keymap = {}
 
     def _update_keymap(self):
         '''Analyse keymap, build a mapping of keysym to (keycode + modifiers),
@@ -1194,6 +1196,9 @@ class KeyboardEmulation(KeyboardEmulationBase):
         assert self._backspace_mapping.custom_mapping is None
         # Get modifier mapping.
         self.modifier_mapping = self._display.get_modifier_mapping()
+
+    def start(self):
+        self._update_keymap()
 
     def send_backspaces(self, number_of_backspaces):
         """Emulate the given number of backspaces.
