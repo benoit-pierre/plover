@@ -46,6 +46,9 @@ class FakeConfig(object):
     def load(self, fp):
         pass
 
+    def save(self, fp):
+        pass
+
     def __getitem__(self, key):
         return self._options[key]
 

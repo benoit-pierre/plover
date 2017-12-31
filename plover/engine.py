@@ -10,7 +10,7 @@ from plover import log, system
 from plover.dictionary.loading_manager import DictionaryLoadingManager
 from plover.exception import DictionaryLoaderException, InvalidConfigurationError
 from plover.formatting import Formatter
-from plover.misc import shorten_path
+from plover.misc import background_save, shorten_path
 from plover.registry import registry
 from plover.resource import ASSET_SCHEME, resource_filename
 from plover.steno import Stroke
@@ -163,6 +163,11 @@ class StenoEngine(object):
         self._translator.set_dictionary(self._dictionaries)
         self._trigger_hook('dictionaries_loaded', self._dictionaries)
 
+    @background_save
+    def _save_config(self):
+        with open(self._config.target_file, 'wb') as f:
+            self._config.save(f)
+
     def _update(self, config_update=None, full=False, reset_machine=False):
         original_config = self._config.as_dict()
         # Update configuration.
@@ -180,6 +185,9 @@ class StenoEngine(object):
                 for option, value in config.items()
                 if value != original_config[option]
             }
+            # Save config if anything changed.
+            if config_update:
+                self._save_config()
         # Update logging.
         log.set_stroke_filename(config['log_file_name'])
         log.enable_stroke_logging(config['enable_stroke_logging'])
