@@ -34,6 +34,7 @@ class Registry(object):
         'machine',
         'macro',
         'meta',
+        'output',
         'system',
     )
 

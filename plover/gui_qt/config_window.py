@@ -270,6 +270,10 @@ class ConfigWindow(QDialog, Ui_ConfigWindow, WindowState):
         super(ConfigWindow, self).__init__()
         self.setupUi(self)
         self._engine = engine
+        outputs = {
+            plugin.name: _(plugin.name)
+            for plugin in registry.list_plugins('output')
+        }
         machines = {
             plugin.name: _(plugin.name)
             for plugin in registry.list_plugins('machine')
@@ -315,6 +319,7 @@ class ConfigWindow(QDialog, Ui_ConfigWindow, WindowState):
                 ConfigOption(_('Keymap:'), 'system_keymap', KeymapOption),
             )),
             (_('Output'), (
+                ConfigOption(_('Type:'), 'output_type', partial(ChoiceOption, choices=outputs)),
                 ConfigOption(_('Enable at start:'), 'auto_start', BooleanOption,
                              _('Enable output on startup.')),
                 ConfigOption(_('Start attached:'), 'start_attached', BooleanOption,

@@ -43,6 +43,12 @@ class KeyboardCaptureBase(object):
 class KeyboardEmulationBase(object):
     """Emulate keyboard events."""
 
+    def start(self):
+        pass
+
+    def cancel(self):
+        pass
+
     def send_backspaces(self, number_of_backspaces):
         raise NotImplementedError()
 
@@ -95,9 +101,11 @@ if __name__ == '__main__':
     kc.key_up = lambda k: test(k, u'released')
     kc.suppress_keyboard('a s d f'.split())
     kc.start()
+    ke.start()
     print('Press CTRL-c to quit.')
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
+        ke.cancel()
         kc.cancel()

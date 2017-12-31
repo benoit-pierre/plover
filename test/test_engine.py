@@ -33,6 +33,7 @@ class FakeConfig(object):
         'start_capitalized'         : True,
         'start_attached'            : False,
         'enabled_extensions'        : set(),
+        'output_type'               : 'Fake',
     }
 
     def __init__(self, **kwargs):
@@ -87,6 +88,12 @@ class FakeMachine(StenotypeBase):
 
 class FakeKeyboardEmulation(object):
 
+    def start(self):
+        pass
+
+    def cancel(self):
+        pass
+
     def send_backspaces(self, b):
         pass
 
@@ -115,10 +122,10 @@ class EngineTestCase(unittest.TestCase):
         FakeMachine.instance = None
         self.reg = Registry()
         self.reg.register_plugin('machine', 'Fake', FakeMachine)
-        self.kbd = FakeKeyboardEmulation()
+        self.reg.register_plugin('output', 'Fake', FakeKeyboardEmulation)
         self.cfg = FakeConfig(**kwargs)
         self.events = []
-        self.engine = FakeEngine(self.cfg, self.kbd)
+        self.engine = FakeEngine(self.cfg)
         def hook_callback(hook, *args, **kwargs):
             self.events.append((hook, args, kwargs))
         for hook in self.engine.HOOKS:
