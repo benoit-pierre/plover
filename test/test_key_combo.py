@@ -1,109 +1,214 @@
 
-from plover.key_combo import parse_key_combo
+import inspect
+import itertools
 
-from . import TestCase
+import pytest
+
+from plover.key_combo import KeyCombo
 
 
-class KeyComboParserTest(TestCase):
+def generate_combo_tests(test_id, *params, key_name_to_key_code=None):
+    yield ('id', test_id)
+    if key_name_to_key_code is not None:
+        yield ('key_name_to_key_code', key_name_to_key_code)
+    for iterables in params:
+        iterables = [
+            i if isinstance(i, (tuple, list)) else (i,)
+            for i in iterables
+        ]
+        if len(iterables) < 2:
+            iterables.append(('',))
+        if len(iterables) < 3:
+            iterables.append((False,))
+        if len(iterables) < 4:
+            iterables.append(('',))
+        for combo_string, parse_result, bool_result, reset_result in itertools.product(*iterables):
+            yield (
+                ('parse', combo_string, parse_result),
+                ('bool', bool_result),
+                ('reset', reset_result),
+            )
 
-    def test_noop(self):
-        for combo_string in ('', '   '):
-            self.assertEqual(parse_key_combo(combo_string), [])
+KEY_COMBO_TESTS = tuple(itertools.chain(
+    (
+        # id TEST_IDENTIFIER
+        # key_name_to_key_code KEY_NAME_TO_KEY_CODE_FUNCTION
+        # parse COMBO_STRING KEY_EVENTS
+        # bool HAS_PRESSED
+        # reset KEY_EVENTS
 
-    def test_syntax_error(self):
-        for combo_string in (
-            # Invalid character.
+        ('key_name_to_key_code', lambda k: k),
+
+        # Initial state.
+        ('id', 'initial_state'),
+        (
+            ('bool', False),
+            ('reset', ''),
+        ),
+
+        # Reset after holding a key.
+        ('id', 'reset'),
+        (
+            ('parse', '+a b', '+a +b -b'),
+            ('bool', True),
+            ('reset', '-a'),
+            ('bool', False),
+            ('reset', ''),
+        ),
+    ),
+
+    # No-op.
+    generate_combo_tests(
+        'no-op',
+        (('', '   '), '', False, ''),
+    ),
+
+    # Syntax error:
+    generate_combo_tests(
+        'syntax_error',
+        ((
+            # - invalid character
             'Return,',
             'Return&',
             'Ret. urn <',
             'exclam ! foo',
             'shift[a]',
-            # Unbalanced )
+            # - unbalanced `)`
             ') arg',
             'arg )',
             'arg())',
             'arg(x) )',
-            # Unbalanced (
+            # - unbalanced `(`
             'test(',
             '( grr',
             'foo ( bar',
             'foo (bar ( ',
             'foo ((',
-        ):
-            msg = 'parse_key_combo(%r): SyntaxError not raised' % (
-                combo_string,
-            )
-            with self.assertRaisesWithMessage(SyntaxError, msg):
-                parse_key_combo(combo_string)
+            # - [-+]key() is not valid
+            '+foo ()',
+            '+foo()',
+        ), SyntaxError, False, ''),
+    ),
 
-    def test_already_pressed(self):
-        for combo_string in (
-            # Pressing an already pressed key.
+    # Pressing an already pressed key.
+    generate_combo_tests(
+        'already_pressed',
+        ((
             'foo(foo)',
             'Foo(foO)',
             'foo(fOo(arg))',
             'foo(bar(Foo))',
             'foo(bar(foo(x)))',
-        ):
-            msg = 'parse_key_combo(%r): ValueError not raised' % (
-                combo_string,
-            )
-            with self.assertRaisesWithMessage(ValueError, msg):
-                parse_key_combo(combo_string)
+            '+foo +foo',
+            'foo(+foo)',
+            '+foo bar(foo)',
+            '+foo bar(+foo)',
+        ), ValueError, False, ''),
+    ),
 
-    def test_stacking(self):
-        for combo_string_variants, expected in (
-            # + press, - release
-            # 1 is not a valid identifier, but still a valid key name.
-            (('1',)                    , '+1 -1'                                                  ),
-            (('Shift_l', 'SHIFT_L')    , '+shift_l -shift_l'                                      ),
-            # Case does not matter.
-            (('a', ' A ')              , '+a -a'                                                  ),
-            (('a(b c)', 'a ( b c   )') , '+a +b -b +c -c -a'                                      ),
-            (('a(bc)', ' a(  Bc )')    , '+a +bc -bc -a'                                          ),
-            (('a(bc(d)e f(g) h())i j',), '+a +bc +d -d -bc +e -e +f +g -g -f +h -h -a +i -i +j -j'),
-            (('foo () bar ( foo a b c (d))',
-              'fOo () Bar ( FOO a B c (D))'),
-             '+foo -foo +bar +foo -foo +a -a +b -b +c +d -d -c -bar'),
-        ):
-            expected = [s.strip() for s in expected.split()]
-            for combo_string in combo_string_variants:
-                result = ['%s%s' % ('+' if pressed else '-', key)
-                          for key, pressed in parse_key_combo(combo_string)]
-                msg = (
-                    'parse_key_combo(%r):\n'
-                    ' result  : %r\n'
-                    ' expected: %r\n'
-                    % (combo_string, result, expected)
-                )
-                self.assertEqual(result, expected, msg=msg)
+    # Trying to release a key not pressed.
+    generate_combo_tests(
+        'already_released',
+        (('-foo', 'foo(-bar)'), ValueError, False, ''),
+    ),
 
-    def test_bad_keyname(self):
-        name2code = { c: c for c in '123abc' }
-        combo_string = '1 (c) 2 bad 3 (a b c)'
-        msg = 'parse_key_combo(%r): ValueError not raised' % (
-            combo_string,
-        )
-        with self.assertRaisesWithMessage(ValueError, msg):
-            parse_key_combo(combo_string, key_name_to_key_code=name2code.get)
+    # Stacking.
+    generate_combo_tests(
+        'stacking',
+        # 1 is not a valid identifier, but still a valid key name.
+        (('1', '+1 -1'), '+1 -1'),
+        (('Shift_l', 'SHIFT_L', '+shift_l -SHIFT_l'), '+shift_l -shift_l'),
+        # Case does not matter.
+        (('a', ' A ', ' +A -a  '), '+a -a'),
+        (('a(b c)', 'a ( b c   )', 'a(+b-b+c-c)'), '+a +b -b +c -c -a'),
+        (('a(bc)', ' a(  Bc )', '+A+BC-BC-A'), '+a +bc -bc -a'),
+        (('a(bc(d)e f(g) h())i j', '+a +bc d -bc e +f g -f h -a i j'),
+         '+a +bc +d -d -bc +e -e +f +g -g -f +h -h -a +i -i +j -j'),
+        (('foo () bar ( foo a b c (d))', 'fOo () Bar ( FOO a B c (D))',
+          '+foo -foo +bar +foo -foo +a -a +b -b +c +d -d -c -bar'),
+         '+foo -foo +bar +foo -foo +a -a +b -b +c +d -d -c -bar'),
+    ),
 
-    def test_aliasing(self):
-        name2code = {
-            '1'     : 10,
-            'exclam': 10,
-        }
-        self.assertListEqual(list(parse_key_combo('1 exclam', key_name_to_key_code=name2code.get)),
-                             [(10, True), (10, False),
-                              (10, True), (10, False)])
+    # Held keys.
+    generate_combo_tests(
+        'held_keys',
+        ('+a', '+a', True, '-a'),
+        (('+alt tab', '+alt +tab -tab'), '+alt +tab -tab', True, '-alt'),
+    ),
 
-        for combo_string in (
-            '1 ( exclam )',
-            'exclam(1)',
-        ):
-            msg = 'parse_key_combo(%r): ValueError not raised' % (
-                combo_string,
-            )
-            with self.assertRaisesWithMessage(ValueError, msg):
-                # Yielding the first key event should
-                # only happen after full validation.
-                parse_key_combo(combo_string, key_name_to_key_code=name2code.get)
+    # Split combo.
+    (
+        ('id', 'split_combo'),
+        (
+            ('parse', '+alt tab', '+alt +tab -tab'),
+            ('bool', True),
+            ('parse', 'tab', '+tab -tab'),
+            ('bool', True),
+            ('reset', '-alt'),
+            ('bool', False),
+        ),
+    ),
+
+    # Invalid key name.
+    generate_combo_tests(
+        'invalid_key',
+        (('1 (c) 2 bad 3 (a b c)', '1 +c 2 +bad 3',), ValueError),
+        key_name_to_key_code={c: c for c in '123abc'}.get,
+    ),
+
+    # Same key code, multiple key names.
+    generate_combo_tests(
+        'aliasing',
+        (('1 exclam', '+1 -exclam +exclam -1'), '+10 -10 +10 -10'),
+        (('1 ( exclam )', 'exclam(1)', '+1 +exclam', 'exclam(-1)'), ValueError),
+        key_name_to_key_code={'1': '10', 'exclam': '10'}.get,
+    ),
+
+))
+
+def parametrize(tests):
+    key_name_to_key_code = None
+    test_id = None
+    args = []
+    ids = []
+    for t in tests:
+        if t[0] == 'key_name_to_key_code':
+            key_name_to_key_code = t[1]
+        elif t[0] == 'id':
+            test_id = t[1]
+        else:
+            assert key_name_to_key_code is not None
+            assert test_id is not None
+            args.append((key_name_to_key_code, t))
+            ids.append(test_id)
+    return pytest.mark.parametrize(
+        ('key_name_to_key_code', 'instructions'),
+        args, ids=ids
+    )
+
+@parametrize(KEY_COMBO_TESTS)
+def test_key_combo(key_name_to_key_code, instructions):
+    def repr_expected(result):
+        assert isinstance(result, str)
+        return [s.strip() for s in result.split()]
+    def repr_key_events(events):
+        assert isinstance(events, list)
+        return ['%s%s' % ('+' if pressed else '-', key)
+                for key, pressed in events]
+    kc = KeyCombo(key_name_to_key_code)
+    for action, *args in instructions:
+        if action == 'parse':
+            combo_string, key_events = args
+            if inspect.isclass(key_events):
+                with pytest.raises(key_events):
+                    kc.parse(combo_string)
+            else:
+                assert repr_key_events(kc.parse(combo_string)) == repr_expected(key_events)
+        elif action == 'bool':
+            has_pressed = args[0]
+            assert bool(kc) == has_pressed
+        elif action == 'reset':
+            key_events = args[0]
+            assert repr_key_events(kc.reset()) == repr_expected(key_events)
+        else:
+            raise ValueError(args[0])

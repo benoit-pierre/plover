@@ -21,7 +21,7 @@ import winreg
 
 from ctypes import windll, wintypes
 
-from plover.key_combo import parse_key_combo
+from plover.key_combo import KeyCombo
 from plover.oslayer.keyboardcontrol import KeyboardCaptureBase, KeyboardEmulationBase
 from plover.oslayer.winkeyboardlayout import KeyboardLayout
 from plover import log
@@ -359,6 +359,7 @@ class KeyboardEmulation(KeyboardEmulationBase):
 
     def __init__(self):
         self.keyboard_layout = KeyboardLayout()
+        self._key_combo = KeyCombo(self.keyboard_layout.keyname_to_vk.get)
 
     # Sends input types to buffer
     @staticmethod
@@ -457,7 +458,7 @@ class KeyboardEmulation(KeyboardEmulationBase):
         # Make sure keyboard layout is up-to-date.
         self._refresh_keyboard_layout()
         # Parse and validate combo.
-        key_events = parse_key_combo(combo_string, self.keyboard_layout.keyname_to_vk.get)
+        key_events = self._key_combo.parse(combo_string)
         # Send events...
         for keycode, pressed in key_events:
             self._key_event(keycode, pressed)
