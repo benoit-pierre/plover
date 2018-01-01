@@ -43,7 +43,7 @@ from Quartz import (
     NSSystemDefined,
 )
 
-from plover.key_combo import add_modifiers_aliases, parse_key_combo, KEYNAME_TO_CHAR
+from plover.key_combo import add_modifiers_aliases, KeyCombo, KEYNAME_TO_CHAR
 from plover.oslayer.keyboardcontrol_base import KeyboardCaptureBase, KeyboardEmulationBase
 from plover.oslayer.osxkeyboardlayout import KeyboardLayout
 from plover import log
@@ -304,6 +304,23 @@ class KeyboardEmulation(KeyboardEmulationBase):
 
     def __init__(self):
         self._layout = KeyboardLayout()
+        self._key_combo = KeyCombo(name_to_code)
+
+    def name_to_code(self, name):
+        # Static key codes
+        code = KEYNAME_TO_KEYCODE.get(name)
+        if code is not None:
+            pass
+        # Dead keys
+        elif name.startswith('dead_'):
+            code, mod = self._layout.deadkey_symbol_to_key_sequence(
+                DEADKEY_SYMBOLS.get(name)
+            )[0]
+        # Normal keys
+        else:
+            char = KEYNAME_TO_CHAR.get(name, name)
+            code, mods = self._layout.char_to_key_sequence(char)[0]
+        return code
 
     @staticmethod
     def send_backspaces(number_of_backspaces):
@@ -403,23 +420,8 @@ class KeyboardEmulation(KeyboardEmulationBase):
                 and release the Tab key, and then release the left Alt key.
 
         """
-        def name_to_code(name):
-            # Static key codes
-            code = KEYNAME_TO_KEYCODE.get(name)
-            if code is not None:
-                pass
-            # Dead keys
-            elif name.startswith('dead_'):
-                code, mod = self._layout.deadkey_symbol_to_key_sequence(
-                    DEADKEY_SYMBOLS.get(name)
-                )[0]
-            # Normal keys
-            else:
-                char = KEYNAME_TO_CHAR.get(name, name)
-                code, mods = self._layout.char_to_key_sequence(char)[0]
-            return code
         # Parse and validate combo.
-        key_events = parse_key_combo(combo_string, name_to_code)
+        key_events = self._key_combo.parse(combo_string)
         # Send events...
         self._send_sequence(key_events)
 

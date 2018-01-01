@@ -31,7 +31,7 @@ from Xlib import X, XK, display
 from Xlib.ext import xinput, xtest
 from Xlib.ext.ge import GenericEventCode
 
-from plover.key_combo import add_modifiers_aliases, parse_key_combo
+from plover.key_combo import add_modifiers_aliases, KeyCombo
 from plover.oslayer.keyboardcontrol_base import KeyboardCaptureBase, KeyboardEmulationBase
 from plover import log
 
@@ -1137,6 +1137,7 @@ class KeyboardEmulation(KeyboardEmulationBase):
     def __init__(self):
         """Prepare to emulate keyboard events."""
         self._display = display.Display()
+        self._key_combo = KeyCombo(self._get_keycode_from_keystring)
         self._update_keymap()
 
     def _update_keymap(self):
@@ -1197,6 +1198,11 @@ class KeyboardEmulation(KeyboardEmulationBase):
         # Get modifier mapping.
         self.modifier_mapping = self._display.get_modifier_mapping()
 
+    def _send_key_combo(self, key_events):
+        for keycode, pressed in key_events:
+            event_type = X.KeyPress if pressed else X.KeyRelease
+            xtest.fake_input(self._display, event_type, keycode)
+
     def send_backspaces(self, number_of_backspaces):
         """Emulate the given number of backspaces.
 
@@ -1253,14 +1259,7 @@ class KeyboardEmulation(KeyboardEmulationBase):
         and release the Tab key, and then release the left Alt key.
 
         """
-        # Parse and validate combo.
-        key_events = [
-            (keycode, X.KeyPress if pressed else X.KeyRelease) for keycode, pressed
-            in parse_key_combo(combo_string, self._get_keycode_from_keystring)
-        ]
-        # Emulate the key combination by sending key events.
-        for keycode, event_type in key_events:
-            xtest.fake_input(self._display, event_type, keycode)
+        self._send_key_combo(self._key_combo.parse(combo_string))
         self._display.sync()
 
     def _send_keycode(self, keycode, modifiers=0):
