@@ -1,7 +1,7 @@
 
-from plover.machine.keymap import Keymap
+import unittest
 
-from . import TestCase
+from plover.machine.keymap import Keymap
 
 
 def new_keymap():
@@ -27,7 +27,7 @@ MAPPINGS_FULL = dict(MAPPINGS_DICT)
 MAPPINGS_FULL.update({'no-op': ()})
 
 
-class KeymapTest(TestCase):
+class KeymapTest(unittest.TestCase):
 
     def test_keymap_init(self):
         k = new_keymap()
