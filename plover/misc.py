@@ -1,7 +1,9 @@
 # Copyright (c) 2016 Open Steno Project
 # See LICENSE.txt for details.
 
+import functools
 import os
+import threading
 
 from plover.oslayer.config import CONFIG_DIR
 from plover.resource import ASSET_SCHEME
@@ -77,3 +79,38 @@ def to_surrogate_pair(char):
         else:
             pairs.append(code_point)
     return pairs
+
+def background_save(save_fn):
+    '''
+    Helper for background saving.
+
+    - will automatically spawn a thread to save in the background
+    - only one save operation is allowed to be active
+    - if multiple requests for saving are done while saving is
+      already in progress, only the last request will be allowed
+      once the current save operation is completed
+
+    Note: the behavior is undefined if target/args/kwargs
+    are not the same across calls to the wrapped function!
+    '''
+    saving_in_progress = threading.Semaphore(1)
+    saving_scheduled = threading.Semaphore(1)
+
+    class SaveThread(threading.Thread):
+
+        def __init__(self, target, args=None, kwargs=None):
+            super(SaveThread, self).__init__(target=target, args=args, kwargs=kwargs)
+
+        def run(self):
+            with saving_in_progress:
+                saving_scheduled.release()
+                self._target(*self._args, **self._kwargs)
+
+    @functools.wraps(save_fn)
+    def wrapper(*args, **kwargs):
+        if not saving_scheduled.acquire(False):
+            return
+        t = SaveThread(save_fn, args, kwargs)
+        t.start()
+
+    return wrapper
