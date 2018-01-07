@@ -8,9 +8,8 @@
 """Common elements to all dictionary formats."""
 
 from os.path import splitext
-import functools
-import threading
 
+from plover.misc import background_save
 from plover.registry import registry
 
 
@@ -25,21 +24,6 @@ def _get_dictionary_class(filename):
                                   registry.list_plugins('dictionary'))))
     return dict_module
 
-def _locked(fn):
-    lock = threading.Lock()
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        with lock:
-            fn(*args, **kwargs)
-    return wrapper
-
-def _threaded(fn):
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        t = threading.Thread(target=fn, args=args, kwargs=kwargs)
-        t.start()
-    return wrapper
-
 def create_dictionary(resource, threaded_save=True):
     '''Create a new dictionary.
 
@@ -50,7 +34,7 @@ def create_dictionary(resource, threaded_save=True):
     '''
     d = _get_dictionary_class(resource).create(resource)
     if threaded_save:
-        d.save = _threaded(_locked(d.save))
+        d.save = background_save(d.save)
     return d
 
 def load_dictionary(resource, threaded_save=True):
@@ -60,5 +44,5 @@ def load_dictionary(resource, threaded_save=True):
     '''
     d = _get_dictionary_class(resource).load(resource)
     if not d.readonly and threaded_save:
-        d.save = _threaded(_locked(d.save))
+        d.save = background_save(d.save)
     return d
