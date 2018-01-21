@@ -57,3 +57,6 @@ class Engine(StenoEngine, QThread):
 
     def signal_connect(self, name, callback):
         self._signals[name].connect(callback)
+
+    def signal_disconnect(self, name, callback):
+        self._signals[name].connect(callback)

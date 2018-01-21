@@ -1,3 +1,7 @@
+# plover-config-wiz
+Markdown==2.6.11
+Pygments==2.2.0
+plover_config_wiz-0.1.0-py3-none-any.whl
 # plover-plugins-manager
 docutils==0.14
 pip==9.0.1
