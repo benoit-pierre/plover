@@ -16,8 +16,9 @@ emulate keyboard input.
 
 """
 
-import sys
 import importlib
+import sys
+import time
 
 
 if sys.platform.startswith('linux'):
