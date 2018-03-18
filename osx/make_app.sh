@@ -56,8 +56,6 @@ rm -rf "$target_libs/site-packages"
 mkdir "$target_libs/site-packages"
 # Add sitecustomize.py -- adds the above site-packages to our Python's sys.path
 cp "$plover_dir/osx/app_resources/sitecustomize.py" "$target_libs/sitecustomize.py"
-# Disable user site-packages by changing a constant in site.py
-sed -ie 's/ENABLE_USER_SITE = None/ENABLE_USER_SITE = False/g' "$target_libs/site.py"
 
 # Switch to target Python.
 python="$PWD/$target_dir/$target_python"
