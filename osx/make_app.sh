@@ -61,6 +61,14 @@ cp "$plover_dir/osx/app_resources/sitecustomize.py" "$target_libs/sitecustomize.
 python="$PWD/$target_dir/$target_python"
 unset __PYVENV_LAUNCHER__
 
+run_eval "
+appdir_python()
+{
+  env --unset=__PYVENV_LAUNCHER__ \"$PWD/$target_dir/$target_python\" -s \"\$@\"
+}
+"
+python='appdir_python'
+
 # Install Plover and dependencies.
 bootstrap_dist "$plover_wheel"
 
