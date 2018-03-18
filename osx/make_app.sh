@@ -26,8 +26,9 @@ echo "System python3 is found at: $python3_dir"
 
 # App to build
 app_dir="$plover_dir/build/$PACKAGE.app"
+app_dist_dir="$plover_dir/dist/Plover.app"
 
-rm -rf "$app_dir"{,.fat}
+rm -rf "$app_dir"{,.fat} "$app_dist_dir"
 
 # E.g. python3.6 (name of python executable)
 target_python="python${py_version}"
@@ -117,3 +118,5 @@ ditto -v --arch x86_64 "$app_dir"{.fat,}
 
 # Check requirements.
 run "$python" -I -m plover_build_utils.check_requirements
+
+mv "$app_dir" "$app_dist_dir"
