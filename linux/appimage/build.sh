@@ -99,7 +99,10 @@ info ')'
 run_eval "
 appdir_python()
 {
-  env LD_LIBRARY_PATH=\"$appdir/usr/lib:$appdir/usr/lib/x86_64-linux-gnu\${LD_LIBRARY_PATH+:\$LD_LIBRARY_PATH}\" "$appdir/usr/bin/python3.6" -s \"\$@\"
+  env \
+    PYTHONNOUSERSITE=1 \
+    LD_LIBRARY_PATH=\"$appdir/usr/lib:$appdir/usr/lib/x86_64-linux-gnu\${LD_LIBRARY_PATH+:\$LD_LIBRARY_PATH}\" \
+    "$appdir/usr/bin/python3.6" \"\$@\"
 }
 "
 python='appdir_python'
