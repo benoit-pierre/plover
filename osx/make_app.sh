@@ -26,10 +26,8 @@ echo "System python3 is found at: $python3_dir"
 
 # App to build
 app_dir="$plover_dir/build/$PACKAGE.app"
-app_dist_dir="$plover_dir/dist/Plover.app"
 
-rm -rf "$app_dir"
-rm -rf "$app_dist_dir"
+rm -rf "$app_dir"{,.fat}
 
 # E.g. python3.6 (name of python executable)
 target_python="python${py_version}"
@@ -112,8 +110,8 @@ sed -e "s/\$python_version/$py_version/" -e "s/\$target_python/$target_python/" 
 "$python" -m plover_build_utils.source_less "$target_libs" "*/pip/_vendor/distlib/*"
 
 # Strip 32-bit support
-ditto -v --arch x86_64 "$app_dir" "$app_dist_dir"
+mv "$app_dir"{,.fat}
+ditto -v --arch x86_64 "$app_dir"{.fat,}
 
 # Check requirements.
-python="$PWD/$app_dist_dir/Contents/Frameworks/$target_python"
 run "$python" -I -m plover_build_utils.check_requirements
