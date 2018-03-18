@@ -64,7 +64,7 @@ unset __PYVENV_LAUNCHER__
 run_eval "
 appdir_python()
 {
-  env --unset=__PYVENV_LAUNCHER__ \"$PWD/$target_dir/$target_python\" -s \"\$@\"
+  env -u __PYVENV_LAUNCHER__ \"$PWD/$target_dir/$target_python\" -s \"\$@\"
 }
 "
 python='appdir_python'
