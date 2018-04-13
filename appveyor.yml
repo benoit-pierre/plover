@@ -63,7 +63,7 @@ test_script:
   - "python setup.py test"
 
 after_test:
-  - "python setup.py bdist_win -t -z -i"
+  - "python setup.py bdist_win -z"
 
 artifacts:
 
