@@ -835,54 +835,54 @@ def test_meta_carry_capitalize(meta, last_action, expected):
     assert formatting._atom_to_action('{' + meta + '}', ctx) == expected
 
 
-def _apply_case_tests():
-    test = ' some test '
-    test2 = 'test Me'
-    test3 = ' SOME TEST '
-    return (
-        # INVALID
-        lambda: (test, '', False, ValueError),
-        lambda: (test, 'TEST', False, ValueError),
-        # NO-OP
-        lambda: (test, None, False, test),
-        lambda: (test, None, True, test),
-        # TITLE
-        lambda: (test, formatting.CASE_TITLE, False, ' Some Test '),
-        # TITLE will not affect appended output
-        lambda: (test, formatting.CASE_TITLE, True, ' some test '),
-        lambda: (test2, formatting.CASE_TITLE, True, 'test Me'),
-        # LOWER
-        lambda: (test, formatting.CASE_LOWER, False, ' some test '),
-        lambda: (test3, formatting.CASE_LOWER, False, ' some test '),
-        lambda: (test2, formatting.CASE_LOWER, True, 'test me'),
-        # UPPER
-        lambda: (test.upper(), formatting.CASE_UPPER, False, ' SOME TEST '),
-        lambda: (test3, formatting.CASE_UPPER, False, ' SOME TEST '),
-        lambda: (test2, formatting.CASE_UPPER, True, 'TEST ME'),
-    )
+# def _apply_case_tests():
+#     test = ' some test '
+#     test2 = 'test Me'
+#     test3 = ' SOME TEST '
+#     return (
+#         # INVALID
+#         lambda: (test, '', False, ValueError),
+#         lambda: (test, 'TEST', False, ValueError),
+#         # NO-OP
+#         lambda: (test, None, False, test),
+#         lambda: (test, None, True, test),
+#         # TITLE
+#         lambda: (test, formatting.CASE_TITLE, False, ' Some Test '),
+#         # TITLE will not affect appended output
+#         lambda: (test, formatting.CASE_TITLE, True, ' some test '),
+#         lambda: (test2, formatting.CASE_TITLE, True, 'test Me'),
+#         # LOWER
+#         lambda: (test, formatting.CASE_LOWER, False, ' some test '),
+#         lambda: (test3, formatting.CASE_LOWER, False, ' some test '),
+#         lambda: (test2, formatting.CASE_LOWER, True, 'test me'),
+#         # UPPER
+#         lambda: (test.upper(), formatting.CASE_UPPER, False, ' SOME TEST '),
+#         lambda: (test3, formatting.CASE_UPPER, False, ' SOME TEST '),
+#         lambda: (test2, formatting.CASE_UPPER, True, 'TEST ME'),
+#     )
 
-@parametrize(_apply_case_tests())
-def test_apply_case(input_text, case, appended, expected):
-    if inspect.isclass(expected):
-        with pytest.raises(expected):
-            formatting._apply_mode_case(input_text, case, appended)
-    else:
-        assert formatting._apply_mode_case(input_text, case, appended) == expected
+# @parametrize(_apply_case_tests())
+# def test_apply_case(input_text, case, appended, expected):
+#     if inspect.isclass(expected):
+#         with pytest.raises(expected):
+#             formatting._apply_mode_case(input_text, case, appended)
+#     else:
+#         assert formatting._apply_mode_case(input_text, case, appended) == expected
 
 
-def _apply_space_char_tests():
-    test = ' some text '
-    test2 = "don't"
-    return (
-        lambda: (test, '_', '_some_text_'),
-        lambda: (test, '', 'sometext'),
-        lambda: (test2, '_', test2),
-        lambda: (test2, '', test2),
-    )
+# def _apply_space_char_tests():
+#     test = ' some text '
+#     test2 = "don't"
+#     return (
+#         lambda: (test, '_', '_some_text_'),
+#         lambda: (test, '', 'sometext'),
+#         lambda: (test2, '_', test2),
+#         lambda: (test2, '', test2),
+#     )
 
-@parametrize(_apply_space_char_tests())
-def test_apply_space_char(text, space_char, expected):
-    assert formatting._apply_mode_space_char(text, space_char) == expected
+# @parametrize(_apply_space_char_tests())
+# def test_apply_space_char(text, space_char, expected):
+#     assert formatting._apply_mode_space_char(text, space_char) == expected
 
 
 @parametrize((
