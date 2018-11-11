@@ -81,10 +81,10 @@ build()
   # Note: if we moved this to the `before_deploy` phase, we would
   # not have to check, but we'd also lose caching; since the cache
   # is stored before the `before_install` phase...
-  if is_deployment
+  if true #is_deployment
   then
     # Build AppImage.
-    run ./linux/appimage/build.sh -c -j 2 -w dist/*.whl
+    run ./linux/appimage/build.sh -c -j 2 -O -w dist/*.whl
     run rm -rf .cache/pip
   else
     # Otherwise, install plugins, and check requirements.
