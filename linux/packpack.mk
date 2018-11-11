@@ -6,7 +6,7 @@ appimage:
 	tar xf dist/$(PACKAGE).tar.xz -C /build
 	cd /build/$(PACKAGE) && \
 		ln -s /cache .cache && \
-		env MAKEFLAGS='' ./linux/appimage/build.sh -w /source/dist/$(PACKAGE)-py3-none-any.whl -c -j 2 -O && \
+		env MAKEFLAGS='' ./linux/appimage/build.sh -w /source/dist/$(PACKAGE)-py3-none-any.whl -c -j 1 -O && \
 		mv dist/*.AppImage ..
 
 .PHONY: makepkg
