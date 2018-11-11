@@ -84,7 +84,8 @@ build()
   if true #is_deployment
   then
     # Build AppImage.
-    run ./linux/appimage/build.sh -c -j 2 -O -w dist/*.whl
+    run git clone --depth=1 https://github.com/packpack/packpack.git
+    run env PATH="$PWD/packpack:$PATH" ./linux/packpack.sh appimage
     run rm -rf .cache/pip
   else
     # Otherwise, install plugins, and check requirements.
