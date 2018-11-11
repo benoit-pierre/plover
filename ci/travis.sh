@@ -56,7 +56,8 @@ build()
   if true #is_deployment
   then
     # Build AppImage.
-    run git clone --depth=1 https://github.com/packpack/packpack.git
+    # run git clone --depth=1 https://github.com/packpack/packpack.git
+    run docker build -t plover/packpack:appimage-2 appimage-2
     run_eval "export PATH=\"$PWD/packpack:\$PATH\""
     run ./linux/packpack.sh appimage
     run rm -rf .cache/pip

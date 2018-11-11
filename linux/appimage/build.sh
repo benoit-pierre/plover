@@ -86,7 +86,7 @@ cmd=(
 )
 if [ $opt_optimize -ne 0 ]
 then
-  cmd+=(--enable-optimizations --without-lto)
+  cmd+=(--enable-optimizations --with-lto)
 fi
 run "${cmd[@]}"
 run make "${make_opts[@]}"

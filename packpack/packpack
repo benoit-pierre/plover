@@ -1,0 +1,150 @@
+#!/bin/sh
+
+# PackPack version
+PACKVERSION=1.0.0
+
+# Path to PackPack makefiles
+PACKDIR=$(cd $(dirname $0) && pwd)/pack
+
+# Source directory
+SOURCEDIR=${SOURCEDIR:-$PWD}
+
+# Build directory
+BUILDDIR=${BUILDDIR:-${SOURCEDIR}/build}
+
+# Docker repository to use
+DOCKER_REPO=${DOCKER_REPO:-packpack/packpack}
+
+# Path to cache directory
+CACHE_DIR="${CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/packpack}"
+
+# Docker architecture
+if [ -z "${ARCH}" ]; then
+    # Use uname -m instead of HOSTTYPE
+    case "$(uname -m)" in
+        i*86) ARCH="i386" ;;
+        arm*) ARCH="armhf" ;;
+        x86_64) ARCH="x86_64"; ;;
+        aarch64) ARCH="aarch64" ;;
+        *) ARCH="${HOSTTYPE}" ;;
+    esac
+fi
+
+# Docker image to use
+if [ -z "${DOCKER_IMAGE}" ]; then
+    if [ -n "${OS}" ] && [ -n "${DIST}" ]; then
+        # Non-numeric dist, e.g. debian-sid, ubuntu-precise, etc.
+        DOCKER_IMAGE="${OS}-${DIST}"
+    else
+        # Use ubuntu-xenial docker image if OS or DIST is invalid
+        DOCKER_IMAGE=ubuntu-xenial
+    fi
+
+    if [ "${ARCH}" != "x86_64" ]; then
+        DOCKER_IMAGE="${DOCKER_IMAGE}-${ARCH}"
+    fi
+fi
+
+version() {
+    echo "PackPack version ${PACKVERSION}"
+}
+
+usage() {
+    echo "# PackPack version ${PACKVERSION}"
+    echo ""
+    echo "Usage: OS=ubuntu DIST=xenial $0 [TARGET..]"
+    echo ""
+    echo "## Available Targets"
+    echo ""
+    echo " * tarball - pack a source tarball"
+    echo " * prepare - prepare a build directory"
+    echo " * package - build packages (default)"
+    echo " * clean   - remove all created files"
+    echo ""
+    echo "## Environment Variables"
+    echo ""
+    echo " * PRODUCT - the name of software product, e.g. 'tarantool'"
+    echo " * ARCH - architecture, e.g i386, x86_64, armhf (${ARCH})"
+    echo " * OS - the name of distribution, e.g. debian or fedora (${OS})"
+    echo " * DIST - the version of distribution, e.g. xenial or 24 (${DIST})"
+    echo " * BUILDDIR - directory used for out-of-source build (${BUILDDIR})"
+    echo " * DOCKER_REPO - Docker repository to use (${DOCKER_REPO})"
+    echo ""
+    echo "See also ${PACKDIR}/config.mk"
+    echo ""
+    echo "The actual list of distribution is available on Docker Hub:"
+    echo ""
+    echo "   https://hub.docker.com/r/${DOCKER_REPO}/tags/"
+    echo ""
+    echo "## Documentation"
+    echo ""
+    echo " * See https://github.com/packpack/packpack"
+    echo ""
+}
+
+case "$1" in
+    -V|--version)
+        version
+        exit 0
+    ;;
+    -h|--help)
+        usage
+        exit 1
+        ;;
+    *) ;;
+esac
+
+#
+# Create an entry point for Docker to allow builds from non-root user
+#
+mkdir -p ${BUILDDIR}
+(
+echo "#!/bin/sh";
+echo "useradd -u $(id -u) $USER";
+echo "usermod -a -G sudo $USER 2>/dev/null || :";
+echo "usermod -a -G wheel $USER 2>/dev/null || :";
+echo "usermod -a -G adm $USER 2>/dev/null || :";
+echo "export HOME=/home/$USER" ;
+echo "exec chroot --userspec=$USER / \$@";
+) > ${BUILDDIR}/userwrapper.sh
+chmod a+x ${BUILDDIR}/userwrapper.sh
+
+#
+# Save defined configuration variables to ./env file
+#
+env | grep -E "TRAVIS|PRODUCT|VERSION|RELEASE|TARBALL_|CHANGELOG_|CCACHE_|PACKAGECLOUD_|SMPFLAGS" \
+    > ${BUILDDIR}/env
+
+#
+# Setup cache directory
+#
+mkdir -p "${CACHE_DIR}/ccache"
+
+#
+# Fix security context for selinux
+#
+chcon -Rt svirt_sandbox_file_t ${PACKDIR} ${SOURCEDIR} ${BUILDDIR} \
+    1> /dev/null 2> /dev/null || :
+
+#
+# Start Docker
+#
+set -ex
+[ -n "$NO_PULL" ] || docker pull ${DOCKER_REPO}:${DOCKER_IMAGE}
+docker run \
+        --volume "${PACKDIR}:/pack:ro" \
+        --volume "${SOURCEDIR}:/source:ro" \
+        --volume "${BUILDDIR}:/build" \
+        --env-file ${BUILDDIR}/env \
+        --workdir /source \
+        --rm=true --tty=true \
+        --entrypoint=/build/userwrapper.sh \
+        -e XDG_CACHE_HOME=/cache \
+        -e CCACHE_DIR=/cache/ccache \
+        --volume "${CACHE_DIR}:/cache" \
+        ${DOCKER_REPO}:${DOCKER_IMAGE} \
+        make -f /pack/Makefile -C /source BUILDDIR=/build -j $@
+retcode=$?
+rm -f ${BUILDDIR}/userwrapper.sh ${BUILDDIR}/env
+exit $retcode
+# vim: filetype=sh tabstop=4 shiftwidth=4 softtabstop=4 expandtab
