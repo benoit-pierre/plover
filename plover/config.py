@@ -245,7 +245,7 @@ def system_keymap_option():
         try:
             return build_keymap(config, key, value)
         except ValueError as e:
-            raise InvalidConfigOption(value, default(config, machine_type, system_name)) from e
+            raise InvalidConfigOption(value, default(config, key)) from e
     return ConfigOption('system_keymap', default, getter, setter, validate, full_key)
 
 def dictionaries_option():
