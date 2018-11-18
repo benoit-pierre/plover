@@ -59,7 +59,7 @@ appimage_uninstall()
 
 appimage_launch()
 {
-  exec "${APPDIR}/usr/bin/python3.6" -s -m plover.dist_main "$@"
+  exec "${APPDIR}/usr/bin/python" -s -m plover.dist_main "$@"
 }
 
 set -e
