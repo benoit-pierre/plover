@@ -53,7 +53,7 @@ build()
   # Note: if we moved this to the `before_deploy` phase, we would
   # not have to check, but we'd also lose caching; since the cache
   # is stored before the `before_install` phase...
-  if is_deployment
+  if true #is_deployment
   then
     # Build AppImage.
     run git clone --depth=1 https://github.com/packpack/packpack.git

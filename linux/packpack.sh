@@ -28,7 +28,7 @@ done
 
 [ $# -eq 1 ]
 
-REPO='plover/packpack'
+REPO='benoitpierre/packpack'
 case "$1" in
   appimage)
     OS='appimage'
