@@ -89,14 +89,14 @@ class BinaryDistWin(Command):
         # First things first: create Plover wheel.
         plover_wheel = self.bdist_wheel()
         # Setup embedded Python distribution.
-        # Note: python36.zip is decompressed to prevent errors when 2to3
+        # Note: python37.zip is decompressed to prevent errors when 2to3
         # is used (including indirectly by setuptools `build_py` command).
-        py_embedded = download('https://www.python.org/ftp/python/3.6.7/python-3.6.7-embed-amd64.zip',
-                               '7a81435a25d9557581393ea6805dafb662eaf9e2')
+        py_embedded = download('https://www.python.org/ftp/python/3.7.1/python-3.7.1-embed-amd64.zip',
+                               '640bd8ceb32dc133c69586dc84de9f81d4abaf50')
         dist_dir = os.path.join(os.path.dirname(plover_wheel), PACKAGE + '-win64')
         dist_data = os.path.join(dist_dir, 'data')
         dist_py = os.path.join(dist_data, 'python.exe')
-        dist_stdlib = os.path.join(dist_data, 'python36.zip')
+        dist_stdlib = os.path.join(dist_data, 'python37.zip')
         if os.path.exists(dist_dir):
             shutil.rmtree(dist_dir)
         os.makedirs(dist_data)
@@ -109,7 +109,7 @@ class BinaryDistWin(Command):
         # directory and for the current directory to be prepended
         # to `sys.path` so `plover_build_utils` can be used and
         # plugins can be installed from source.
-        dist_pth = os.path.join(dist_data, 'python36._pth')
+        dist_pth = os.path.join(dist_data, 'python37._pth')
         with open(dist_pth, 'r+') as fp:
             pth = fp.read() + 'import site\n'
             fp.seek(0)
@@ -124,8 +124,8 @@ class BinaryDistWin(Command):
                 '''
             ).lstrip())
         # Use standard site.py so user site packages are enabled.
-        site_py = download('https://github.com/python/cpython/raw/v3.6.3/Lib/site.py',
-                           '5b5a92032c666e0e30c0b2665b8acffe2a624641')
+        site_py = download('https://github.com/python/cpython/raw/v3.7.1/Lib/site.py',
+                           '73c095d105df3ef35d385fe40e6fd179b9cdeb58')
         shutil.copyfile(site_py, os.path.join(dist_site_packages, 'site.py'))
         # Run command helper.
         def run(*args):
@@ -173,9 +173,16 @@ class BinaryDistWin(Command):
                 '''.rstrip()).format(dist_dir=dist_dir,
                                      entrypoint=entrypoint,
                                      gui=gui))
-        # Fix Visual C++ Redistributable DLL location.
-        os.rename(os.path.join(dist_dir, 'data', 'vcruntime140.dll'),
-                  os.path.join(dist_dir, 'vcruntime140.dll'))
+        # The Visual C++ Redistributable DLL is needed, and PyQt5 has
+        # a copy, find it and copy it to the launchers' directory
+        vcr_dll = 'vcruntime140.dll'
+        for dirpath, dirnames, filenames in os.walk(dist_dir):
+            if vcr_dll in filenames:
+                shutil.copyfile(os.path.join(dirpath, vcr_dll),
+                                os.path.join(dist_dir, vcr_dll))
+                break
+        else:
+            raise Exception('could not find %s path' % vcr_dll)
         # Make distribution source-less.
         pyrun('-m', 'plover_build_utils.source_less',
               # Don't touch pip._vendor.distlib sources,
