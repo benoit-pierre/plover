@@ -38,10 +38,10 @@ setup()
 {
   mkdir -p "$CIRCLE_ARTIFACTS"
   # Install Python.
-  download 'python36.pkg' 'https://www.python.org/ftp/python/3.6.7/python-3.6.7-macosx10.6.pkg' '68885dffc1d13c5d24699daa0b83315f'
-  run sudo installer -pkg "$downloads/python36.pkg" -target /
+  download 'python37.pkg' 'https://www.python.org/ftp/python/3.7.1/python-3.7.1-macosx10.6.pkg' 'ac6630338b53b9e5b9dbb1bc2390a21e'
+  run sudo installer -pkg "$downloads/python37.pkg" -target /
   # Update certifiates.
-  run '/Applications/Python 3.6/Install Certificates.command'
+  run '/Applications/Python 3.7/Install Certificates.command'
   # Setup development environment.
   bootstrap_dev --user
 }
