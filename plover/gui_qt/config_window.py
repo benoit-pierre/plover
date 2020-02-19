@@ -5,7 +5,6 @@ from functools import partial
 
 from PyQt5.QtCore import (
     Qt,
-    QVariant,
     pyqtSignal,
 )
 from PyQt5.QtWidgets import (
@@ -117,7 +116,7 @@ class FileOption(QWidget, Ui_FileWidget):
 
 class KeymapOption(QTableWidget):
 
-    valueChanged = pyqtSignal(QVariant)
+    valueChanged = pyqtSignal(object)
 
     class ItemDelegate(QStyledItemDelegate):
 
@@ -182,7 +181,7 @@ class KeymapOption(QTableWidget):
 
 class MultipleChoicesOption(QTableWidget):
 
-    valueChanged = pyqtSignal(QVariant)
+    valueChanged = pyqtSignal(object)
 
     def __init__(self, choices=None, labels=(_('Choice'), _('Selected'))):
         super().__init__()

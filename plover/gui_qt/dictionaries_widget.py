@@ -4,7 +4,6 @@ import os
 from PyQt5.QtCore import (
     QItemSelection,
     QItemSelectionModel,
-    QVariant,
     Qt,
     pyqtSignal,
 )
@@ -50,7 +49,7 @@ def _dictionary_filters(include_readonly=True):
 
 class DictionariesWidget(QWidget, Ui_DictionariesWidget):
 
-    add_translation = pyqtSignal(QVariant)
+    add_translation = pyqtSignal(object)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

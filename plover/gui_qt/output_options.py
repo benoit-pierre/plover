@@ -1,6 +1,6 @@
 from copy import copy
 
-from PyQt5.QtCore import QVariant, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QLabel, QComboBox, QFormLayout, QDoubleSpinBox, QSpinBox, QWidget
 
 from plover.gui_qt.i18n import get_gettext
@@ -12,7 +12,7 @@ _ = get_gettext()
 
 class DelayedKeyboardEmulationOption(QWidget):
 
-    valueChanged = pyqtSignal(QVariant)
+    valueChanged = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()

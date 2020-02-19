@@ -1,6 +1,6 @@
 from copy import copy
 
-from PyQt5.QtCore import QVariant, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget
 
 from serial import Serial
@@ -16,7 +16,7 @@ _ = get_gettext()
 
 class SerialOption(QWidget, Ui_SerialWidget):
 
-    valueChanged = pyqtSignal(QVariant)
+    valueChanged = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -100,7 +100,7 @@ class SerialOption(QWidget, Ui_SerialWidget):
 
 class KeyboardOption(QWidget, Ui_KeyboardWidget):
 
-    valueChanged = pyqtSignal(QVariant)
+    valueChanged = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
