@@ -88,47 +88,32 @@ class BinaryDistWin(Command):
         from plover_build_utils.install_wheels import WHEELS_CACHE
         # Download helper.
         from plover_build_utils.download import download
+        python_version = '3.7.7'.split('.')
         # First things first: create Plover wheel.
         plover_wheel = self.bdist_wheel()
         # Setup embedded Python distribution.
-        # Note: python36.zip is decompressed to prevent errors when 2to3
+        # Note: python37.zip is decompressed to prevent errors when 2to3
         # is used (including indirectly by setuptools `build_py` command).
-        py_embedded = download('https://www.python.org/ftp/python/3.6.8/python-3.6.8-embed-amd64.zip',
-                               'f9d16a818e06ce2552076a9839039dbabb8baf1c')
+        py_embedded = download('https://www.python.org/ftp/python/{0}/python-{0}-embed-amd64.zip'.format('.'.join(python_version)),
+                               'e837b2de3a03112e6283e32ca1ab72d0c3bfc04f')
         dist_dir = os.path.join(os.path.dirname(plover_wheel), PACKAGE + '-win64')
         dist_data = os.path.join(dist_dir, 'data')
         dist_py = os.path.join(dist_data, 'python.exe')
-        dist_stdlib = os.path.join(dist_data, 'python36.zip')
+        dist_stdlib = os.path.join(dist_data, 'python37.zip')
         if os.path.exists(dist_dir):
             shutil.rmtree(dist_dir)
         os.makedirs(dist_data)
         for path in (py_embedded, dist_stdlib):
             with zipfile.ZipFile(path) as zip:
                 zip.extractall(dist_data)
-        os.unlink(dist_stdlib)
         # We don't want a completely isolated Python when using
         # python.exe/pythonw.exe directly, we need a working site
         # directory and for the current directory to be prepended
         # to `sys.path` so `plover_build_utils` can be used and
         # plugins can be installed from source.
-        dist_pth = os.path.join(dist_data, 'python36._pth')
-        with open(dist_pth, 'r+') as fp:
-            pth = fp.read() + 'import site\n'
-            fp.seek(0)
-            fp.write(pth)
-        dist_site_packages = os.path.join(dist_data, 'Lib', 'site-packages')
-        os.makedirs(dist_site_packages)
-        with open(os.path.join(dist_site_packages, 'sitecustomize.py'), 'w') as fp:
-            fp.write(textwrap.dedent(
-                '''
-                import os, sys
-                sys.path.insert(0, os.getcwd())
-                '''
-            ).lstrip())
-        # Use standard site.py so user site packages are enabled.
-        site_py = download('https://github.com/python/cpython/raw/v3.6.8/Lib/site.py',
-                           '46d88612c34b1ed0098f1fbf655454b46afde049')
-        shutil.copyfile(site_py, os.path.join(dist_site_packages, 'site.py'))
+        open(dist_stdlib, 'wb').close()
+        dist_pth = os.path.join(dist_data, 'python{0}._pth'.format(''.join(python_version[:2])))
+        os.unlink(dist_pth)
         # Run command helper.
         def run(*args):
             if self.verbose:
@@ -175,9 +160,6 @@ class BinaryDistWin(Command):
                 '''.rstrip()).format(dist_dir=dist_dir,
                                      entrypoint=entrypoint,
                                      gui=gui))
-        # Fix Visual C++ Redistributable DLL location.
-        os.rename(os.path.join(dist_dir, 'data', 'vcruntime140.dll'),
-                  os.path.join(dist_dir, 'vcruntime140.dll'))
         # Make distribution source-less.
         # pyrun('-m', 'plover_build_utils.source_less',
         #       # Don't touch pip._vendor.distlib sources,
