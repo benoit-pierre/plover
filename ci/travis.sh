@@ -33,6 +33,8 @@ setup()
     libusb-1.0-0-dev
     # simpleaudio
     libasound2-dev
+    # pyttsx3
+    libespeak1
   )
   run sudo apt-get install -qq "${builddeps[@]}"
   # Setup development environment.
