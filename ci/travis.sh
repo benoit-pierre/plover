@@ -31,6 +31,8 @@ setup()
     # hidapi:
     libudev-dev
     libusb-1.0-0-dev
+    # simpleaudio
+    libasound2-dev
   )
   run sudo apt-get install -qq "${builddeps[@]}"
   # Setup development environment.
